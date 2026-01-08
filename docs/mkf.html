@@ -16,6 +16,13 @@
       background: #f6f6f6;
     }
 
+    /* ---- SCALE WRAPPER (50%) ---- */
+    .scale-wrapper {
+      transform: scale(0.5);
+      transform-origin: top left;
+      width: 200%;
+    }
+
     .card {
       max-width: 1000px;
       margin: 0 auto;
@@ -121,52 +128,52 @@
 </head>
 
 <body>
-  <div class="card">
-    <h1>Service Capability Assessment</h1>
+  <div class="scale-wrapper">
+    <div class="card">
+      <h1>Service Capability Assessment</h1>
 
-    <!-- Personal Information -->
-    <h2>Personal Information</h2>
-    <div class="info-grid">
-      <div class="info-item">
-        <div class="info-label">Name</div>
-        <div class="info-value">Alex Thompson</div>
+      <!-- Personal Information -->
+      <h2>Personal Information</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Name</div>
+          <div class="info-value">Alex Thompson</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Role</div>
+          <div class="info-value">Customer Service Supervisor</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Group</div>
+          <div class="info-value">Customer Operations</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Branch</div>
+          <div class="info-value">Sydney – North</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Affiliate</div>
+          <div class="info-value">ANZ Services</div>
+        </div>
       </div>
-      <div class="info-item">
-        <div class="info-label">Role</div>
-        <div class="info-value">Customer Service Supervisor</div>
+
+      <!-- Chart -->
+      <h2>Service Capability Overview</h2>
+      <p class="sub">Spider diagram on a 0–5 scale.</p>
+
+      <div class="chart-wrap">
+        <canvas id="radarChart" aria-label="Service capability spider diagram" role="img"></canvas>
       </div>
-      <div class="info-item">
-        <div class="info-label">Group</div>
-        <div class="info-value">Customer Operations</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Branch</div>
-        <div class="info-value">Sydney – North</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Affiliate</div>
-        <div class="info-value">ANZ Services</div>
-      </div>
+
+      <!-- Numeric values -->
+      <div class="values" id="values"></div>
     </div>
-
-    <!-- Chart -->
-    <h2>Service Capability Overview</h2>
-    <p class="sub">Spider diagram on a 0–5 scale (example values shown).</p>
-
-    <div class="chart-wrap">
-      <canvas id="radarChart" aria-label="Service capability spider diagram" role="img"></canvas>
-    </div>
-
-    <!-- Numeric values -->
-    <div class="values" id="values"></div>
   </div>
 
   <script>
-    // ---- Scale ----
     const SCALE_MIN = 0;
     const SCALE_MAX = 5;
 
-    // ---- Axes ----
     const axes = [
       "CS Survey result",
       "Service Quality KPI",
@@ -174,14 +181,15 @@
       "D-Star Level"
     ];
 
-    // ---- Generate sample values ----
-    function randomValue() {
-      return +(Math.random() * (SCALE_MAX - SCALE_MIN) + SCALE_MIN).toFixed(1);
-    }
+    /* ---- FIXED SAMPLE VALUES ---- */
+    const dataValues = [
+      4.1, // CS Survey result
+      3.8, // Service Quality KPI
+      3.2, // Skill level
+      2.9  // D-Star Level
+    ];
 
-    const dataValues = axes.map(randomValue);
-
-    // ---- Render numeric values ----
+    // Render numeric values
     const valuesContainer = document.getElementById("values");
     axes.forEach((label, i) => {
       const box = document.createElement("div");
@@ -193,7 +201,7 @@
       valuesContainer.appendChild(box);
     });
 
-    // ---- Radar chart ----
+    // Radar chart
     const ctx = document.getElementById("radarChart");
 
     new Chart(ctx, {
@@ -201,11 +209,9 @@
       data: {
         labels: axes,
         datasets: [{
-          label: "Current",
           data: dataValues,
           borderWidth: 2,
           pointRadius: 3,
-          pointHoverRadius: 5,
           fill: true
         }]
       },
@@ -219,8 +225,7 @@
           r: {
             min: SCALE_MIN,
             max: SCALE_MAX,
-            ticks: { stepSize: 1 },
-            pointLabels: { font: { size: 12 } }
+            ticks: { stepSize: 1 }
           }
         },
         elements: {
