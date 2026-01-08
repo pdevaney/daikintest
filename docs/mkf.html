@@ -28,88 +28,93 @@
       margin: 0 auto;
       background: #fff;
       border-radius: 12px;
-      padding: 24px 28px 28px;
+      padding: 36px 40px 44px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     }
 
+    /* ---- HEADINGS ---- */
     h1 {
-      margin: 0 0 16px 0;
-      font-size: 22px;
+      margin: 0 0 24px 0;
+      font-size: 34px;
       font-weight: 700;
     }
 
     h2 {
-      margin: 24px 0 12px 0;
-      font-size: 16px;
+      margin: 34px 0 18px 0;
+      font-size: 26px;
       font-weight: 600;
-      border-bottom: 1px solid #e5e5e5;
-      padding-bottom: 6px;
+      border-bottom: 2px solid #e5e5e5;
+      padding-bottom: 10px;
     }
 
+    .sub {
+      margin: 14px 0 28px 0;
+      color: #555;
+      font-size: 20px;
+    }
+
+    /* ---- PERSONAL INFO ---- */
     .info-grid {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 16px;
-      margin-top: 12px;
+      gap: 22px;
+      margin-top: 18px;
     }
 
     .info-item {
       background: #fafafa;
       border: 1px solid #e5e5e5;
-      border-radius: 8px;
-      padding: 10px 12px;
+      border-radius: 10px;
+      padding: 18px 20px;
     }
 
     .info-label {
-      font-size: 12px;
+      font-size: 18px;
       color: #666;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
 
     .info-value {
-      font-size: 15px;
+      font-size: 26px;
       font-weight: 600;
       color: #222;
     }
 
-    .sub {
-      margin: 8px 0 18px 0;
-      color: #555;
-      font-size: 14px;
-    }
-
+    /* ---- CHART ---- */
     .chart-wrap {
       position: relative;
       width: 100%;
       height: 520px;
-      margin-top: 12px;
+      margin-top: 20px;
     }
 
+    /* ---- VALUES ---- */
     .values {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 18px;
+      gap: 20px;
+      margin-top: 28px;
     }
 
     .value-box {
       background: #fafafa;
-      border-radius: 8px;
-      padding: 10px 12px;
+      border-radius: 10px;
+      padding: 18px 20px;
       border: 1px solid #e5e5e5;
     }
 
     .value-label {
       color: #555;
-      font-size: 12px;
-      margin-bottom: 4px;
+      font-size: 18px;
+      margin-bottom: 8px;
     }
 
     .value-number {
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 32px;
+      font-weight: 700;
     }
 
+    /* ---- RESPONSIVE ---- */
     @media (max-width: 1000px) {
       .info-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -162,7 +167,7 @@
       <p class="sub">Spider diagram on a 0–5 scale.</p>
 
       <div class="chart-wrap">
-        <canvas id="radarChart" aria-label="Service capability spider diagram" role="img"></canvas>
+        <canvas id="radarChart"></canvas>
       </div>
 
       <!-- Numeric values -->
@@ -171,9 +176,6 @@
   </div>
 
   <script>
-    const SCALE_MIN = 0;
-    const SCALE_MAX = 5;
-
     const axes = [
       "CS Survey result",
       "Service Quality KPI",
@@ -181,37 +183,28 @@
       "D-Star Level"
     ];
 
-    /* ---- FIXED SAMPLE VALUES ---- */
-    const dataValues = [
-      4.1, // CS Survey result
-      3.8, // Service Quality KPI
-      3.2, // Skill level
-      2.9  // D-Star Level
-    ];
+    const dataValues = [4.1, 3.8, 3.2, 2.9];
 
     // Render numeric values
     const valuesContainer = document.getElementById("values");
     axes.forEach((label, i) => {
-      const box = document.createElement("div");
-      box.className = "value-box";
-      box.innerHTML = `
-        <div class="value-label">${label}</div>
-        <div class="value-number">${dataValues[i]}</div>
+      valuesContainer.innerHTML += `
+        <div class="value-box">
+          <div class="value-label">${label}</div>
+          <div class="value-number">${dataValues[i]}</div>
+        </div>
       `;
-      valuesContainer.appendChild(box);
     });
 
-    // Radar chart
-    const ctx = document.getElementById("radarChart");
-
-    new Chart(ctx, {
+    // Radar chart with LARGE axis labels
+    new Chart(document.getElementById("radarChart"), {
       type: "radar",
       data: {
         labels: axes,
         datasets: [{
           data: dataValues,
           borderWidth: 2,
-          pointRadius: 3,
+          pointRadius: 4,
           fill: true
         }]
       },
@@ -223,9 +216,21 @@
         },
         scales: {
           r: {
-            min: SCALE_MIN,
-            max: SCALE_MAX,
-            ticks: { stepSize: 1 }
+            min: 0,
+            max: 5,
+            ticks: {
+              stepSize: 1,
+              font: {
+                size: 16   // radial tick numbers
+              }
+            },
+            pointLabels: {
+              font: {
+                size: 26,   // 👈 LARGE AXIS LABELS
+                weight: "600"
+              },
+              color: "#333"
+            }
           }
         },
         elements: {
