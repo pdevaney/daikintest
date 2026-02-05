@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Exam Modification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 24px;
+      background: #f6f6f6;
+      color: #222;
+    }
+
+    h1 { font-size: 24px; margin: 0 0 16px 0; }
+
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 1550px;
+      margin: 0 auto;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
+
+    /* ---------- Metadata ---------- */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .field { display: flex; flex-direction: column; }
+    label { font-size: 13px; color: #555; margin-bottom: 4px; }
+
+    input, select, textarea {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    input[readonly] { background: #f3f3f3; color: #555; }
+    textarea[readonly] { background: #f3f3f3; color: #555; }
+
+    /* ---------- Table ---------- */
+    .table-wrap {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .table-scroll { overflow: auto; }
+
+    .grid {
+      display: grid;
+      grid-template-columns:
+        2.6fr   /* Question */
+        1.6fr   /* Resp 1 */
+        1.6fr   /* Resp 2 */
+        1.6fr   /* Resp 3 */
+        1.6fr   /* Resp 4 */
+        180px   /* For translation */
+        140px;  /* Actions */
+      gap: 12px;
+      padding: 12px;
+      min-width: 1450px;
+      box-sizing: border-box;
+      align-items: start;
+    }
+
+    .header-row {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #fafafa;
+      border-bottom: 2px solid #ddd;
+      font-weight: 700;
+      font-size: 12px;
+      color: #444;
+    }
+
+    .section-row {
+      grid-column: 1 / -1;
+      background: #f0f2f5;
+      border-top: 2px solid #ccc;
+      border-bottom: 2px solid #ccc;
+      padding: 10px 12px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .row { border-bottom: 1px solid #eee; }
+    .row:nth-child(even) { background: #fcfcfc; }
+    .row:nth-child(odd)  { background: #ffffff; }
+
+    /* Creates a little breathing room around each textarea (small gap) */
+    .cell {
+      display: flex;
+      flex-direction: column;
+      padding: 4px;
+      box-sizing: border-box;
+    }
+
+    /* Unified block keeps alignment between question + responses */
+    .editor-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Fixed height so response textareas line up with question textarea */
+    .q-number {
+      height: 22px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      line-height: 1.35;
+      box-sizing: border-box;
+    }
+
+    /* For translation column */
+    .flag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-top: 32px;
+      padding-right: 4px;
+      font-size: 13px;
+      white-space: nowrap;   /* prevents wrapping into the next column */
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .flag input {
+      transform: scale(1.15);
+      cursor: pointer;
+      flex-shrink: 0;        /* ensures checkbox never squashes */
+    }
+
+    /* Actions column */
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 28px;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 8px 10px;
+    }
+
+    .btn-add    { background: #005eb8; color: white; }
+    .btn-add:hover { background: #004a92; }
+
+    .btn-delete { background: #b00020; color: white; }
+    .btn-delete:hover { background: #8b0019; }
+
+    .btn-undo   { background: #666; color: white; }
+    .btn-undo:hover { background: #555; }
+
+    /* Deleted row styling (soft delete) */
+    .deleted {
+      opacity: 0.6;
+      position: relative;
+    }
+    .deleted textarea,
+    .deleted input[type="checkbox"] {
+      pointer-events: none;
+    }
+    .deleted::after {
+      content: "DELETED";
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: #b00020;
+      background: #ffe8ec;
+      border: 1px solid #ffb6c2;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .small-note {
+      margin: 10px 0 12px 0;
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Footer (Save only) */
+    .footer {
+      margin-top: 16px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-save {
+      padding: 10px 16px;
+      font-size: 14px;
+      background: #005eb8;
+      color: white;
+      border-radius: 6px;
+    }
+    .btn-save:hover { background: #004a92; }
+
+    @media (max-width: 1100px) {
+      .meta-grid { grid-template-columns: 1fr; }
+      body { margin: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>Exam Modification</h1>
+
+    <!-- Metadata -->
+    <div class="meta-grid">
+      <div class="field">
+        <label>Exam Code</label>
+        <select id="examCode">
+          <option value="">Select exam</option>
+          <option value="EX-101">EX-101</option>
+          <option value="EX-202">EX-202</option>
+          <option value="EX-303">EX-303</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Exam Name</label>
+        <input id="examName" readonly />
+      </div>
+
+      <div class="field">
+        <label>Level</label>
+        <input id="examLevel" readonly />
+      </div>
+
+      <div class="field">
+        <label>Pillar</label>
+        <input id="examPillar" readonly />
+      </div>
+
+      <div class="field">
+        <label>Language</label>
+        <input value="English" readonly />
+      </div>
+    </div>
+
+    <p class="small-note">
+      Edit questions and responses in English. Tick “For translation” to make items available on the Translation screen.
+      Use “Delete” for a safe (undoable) removal. Add blank questions within a section as needed.
+    </p>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <div class="grid header-row">
+          <div>Question</div>
+          <div>Resp 1</div>
+          <div>Resp 2</div>
+          <div>Resp 3</div>
+          <div>Resp 4</div>
+          <div>For translation</div>
+          <div>Actions</div>
+        </div>
+
+        <div id="rows"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button type="button" class="btn-save" id="saveBtn">Save</button>
+    </div>
+  </div>
+
+  <script>
+    // Exam catalogue: code -> name/level/pillar
+    const EXAMS = {
+      "EX-101": { name: "Foundations of Safety", level: "Level 1", pillar: "Pillar A" },
+      "EX-202": { name: "Advanced Operations",   level: "Level 2", pillar: "Pillar A" },
+      "EX-303": { name: "Expert Assessment",     level: "Level 3", pillar: "Pillar B" }
+    };
+
+    const examCodeEl   = document.getElementById("examCode");
+    const examNameEl   = document.getElementById("examName");
+    const examLevelEl  = document.getElementById("examLevel");
+    const examPillarEl = document.getElementById("examPillar");
+    const rowsEl       = document.getElementById("rows");
+
+    function applyExam(code) {
+      const e = EXAMS[code];
+      examNameEl.value   = e ? e.name : "";
+      examLevelEl.value  = e ? e.level : "";
+      examPillarEl.value = e ? e.pillar : "";
+    }
+    examCodeEl.addEventListener("change", () => applyExam(examCodeEl.value));
+
+    // -----------------------------
+    // Data model: one language; soft delete + forTranslation flag
+    // NOTE: sections will be assigned randomly on load (1..5 questions per section)
+    // -----------------------------
+    let data = [
+      { id: "q1", forTranslation: true,  deleted: false,
+        q: "Before starting the equipment, what should you do first?",
+        r: ["Start the machine", "Perform a safety check", "Skip checks", "Ask someone else"] },
+
+      { id: "q2", forTranslation: false, deleted: false,
+        q: "What does PPE stand for?",
+        r: ["Power Protection Equipment", "Personal Performance Evaluation",
+            "Personal Protective Equipment", "Public Protection Essentials"] },
+
+      { id: "q3", forTranslation: true,  deleted: false,
+        q: "If an alarm sounds, what is the best initial action?",
+        r: ["Continue working", "Mute the alarm", "Increase speed", "Stop and assess"] },
+
+      { id: "q4", forTranslation: true,  deleted: false,
+        q: "Which item should be checked for damage before use?",
+        r: ["Poster", "Desk lamp", "Safety guards", "Coffee cup"] },
+
+      { id: "q5", forTranslation: true,  deleted: false,
+        q: "What is the correct way to report a hazard?",
+        r: ["Follow procedure", "Mention later", "Fix quietly", "Wait"] },
+
+      { id: "q6", forTranslation: false, deleted: false,
+        q: "Select the correct ISO standard number: ISO 9001",
+        r: ["ISO 45001", "ISO 14001", "ISO 9001", "ISO 27001"] }
+    ];
+
+    function newId() {
+      return "q" + Math.random().toString(16).slice(2, 10);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // ---- Random sectioning (1..5 questions per section) ----
+    // This assigns section numbers ONCE when the page loads, based on current ordering.
+    function assignRandomSectionsOnce() {
+      // If section already exists on items, don't reassign (prevents reshuffling on re-render).
+      if (data.length && typeof data[0].section === "number") return;
+
+      let sectionNo = 1;
+      let i = 0;
+
+      while (i < data.length) {
+        const remaining = data.length - i;
+        const size = Math.min(randInt(1, 5), remaining);
+
+        for (let j = 0; j < size; j++) {
+          data[i + j].section = sectionNo;
+        }
+
+        sectionNo++;
+        i += size;
+      }
+    }
+
+    function randInt(min, max) {
+      // inclusive
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function groupedBySection(items) {
+      const map = new Map();
+      items.forEach(it => {
+        const s = it.section || 1;
+        if (!map.has(s)) map.set(s, []);
+        map.get(s).push(it);
+      });
+      return Array.from(map.entries()).sort((a,b) => a[0] - b[0]);
+    }
+
+    function updateField(id, field, value) {
+      const idx = data.findIndex(x => x.id === id);
+      if (idx === -1) return;
+
+      if (field === "q") data[idx].q = value;
+      else if (field === "forTranslation") data[idx].forTranslation = Boolean(value);
+      else if (field && field.startsWith("r")) {
+        const rIdx = Number(field.slice(1));
+        if (!Number.isNaN(rIdx) && rIdx >= 0 && rIdx < 4) {
+          data[idx].r[rIdx] = value;
+        }
+      }
+    }
+
+    function markDeleted(id, isDeleted) {
+      const idx = data.findIndex(x => x.id === id);
+      if (idx === -1) return;
+      data[idx].deleted = isDeleted;
+      render();
+    }
+
+    function addBlankQuestion(sectionNo) {
+      data.push({
+        id: newId(),
+        section: sectionNo,
+        forTranslation: true,
+        deleted: false,
+        q: "",
+        r: ["", "", "", ""]
+      });
+
+      // Keep the new question adjacent to the chosen section (nice and tidy)
+      // We insert it after the last item in that section.
+      const newItem = data[data.length - 1];
+      const withoutNew = data.slice(0, -1);
+
+      let insertAt = withoutNew.length;
+      for (let i = withoutNew.length - 1; i >= 0; i--) {
+        if ((withoutNew[i].section || 1) === sectionNo) {
+          insertAt = i + 1;
+          break;
+        }
+      }
+
+      const rebuilt = [
+        ...withoutNew.slice(0, insertAt),
+        newItem,
+        ...withoutNew.slice(insertAt)
+      ];
+      data = rebuilt;
+
+      render();
+
+      const newRow = rowsEl.querySelector(`.row[data-id="${newItem.id}"]`);
+      if (newRow) newRow.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function render() {
+      rowsEl.innerHTML = "";
+
+      const grouped = groupedBySection(data);
+      let questionCounter = 0;
+
+      grouped.forEach(([sectionNo, items]) => {
+        // Section header
+        const sectionHeader = document.createElement("div");
+        sectionHeader.className = "section-row";
+        sectionHeader.innerHTML = `
+          <div>Section ${sectionNo}</div>
+          <button type="button" class="btn-add" data-add-section="${sectionNo}">+ Add blank question</button>
+        `;
+        rowsEl.appendChild(sectionHeader);
+
+        // Questions
+        items.forEach(item => {
+          questionCounter++;
+
+          const row = document.createElement("div");
+          row.className = "grid row" + (item.deleted ? " deleted" : "");
+          row.dataset.id = item.id;
+
+          const respCells = [0,1,2,3].map(i => `
+            <div class="cell">
+              <div class="editor-block">
+                <div class="q-number"></div>
+                <textarea data-field="r${i}">${escapeHtml(item.r[i] || "")}</textarea>
+              </div>
+            </div>
+          `).join("");
+
+          row.innerHTML = `
+            <div class="cell">
+              <div class="editor-block">
+                <div class="q-number">Q${questionCounter}</div>
+                <textarea data-field="q">${escapeHtml(item.q)}</textarea>
+              </div>
+            </div>
+
+            ${respCells}
+
+            <div class="cell">
+              <div class="flag">
+                <input type="checkbox" data-field="forTranslation" ${item.forTranslation ? "checked" : ""} />
+                <span>For translation</span>
+              </div>
+            </div>
+
+            <div class="cell">
+              <div class="actions">
+                ${
+                  item.deleted
+                    ? `<button type="button" class="btn-undo" data-undo="${item.id}">Undo delete</button>`
+                    : `<button type="button" class="btn-delete" data-delete="${item.id}">Delete</button>`
+                }
+              </div>
+            </div>
+          `;
+
+          if (item.deleted) {
+            row.querySelectorAll("textarea").forEach(t => t.setAttribute("readonly", "readonly"));
+            const cb = row.querySelector("input[type='checkbox']");
+            if (cb) cb.disabled = true;
+          }
+
+          rowsEl.appendChild(row);
+        });
+      });
+
+      // Hook up section add
+      rowsEl.querySelectorAll("[data-add-section]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const sectionNo = Number(btn.getAttribute("data-add-section"));
+          addBlankQuestion(sectionNo);
+        });
+      });
+
+      // Hook up delete/undo
+      rowsEl.querySelectorAll("[data-delete]").forEach(btn => {
+        btn.addEventListener("click", () => markDeleted(btn.getAttribute("data-delete"), true));
+      });
+      rowsEl.querySelectorAll("[data-undo]").forEach(btn => {
+        btn.addEventListener("click", () => markDeleted(btn.getAttribute("data-undo"), false));
+      });
+
+      // Hook up editing
+      rowsEl.querySelectorAll(".row").forEach(rowEl => {
+        const id = rowEl.dataset.id;
+
+        rowEl.querySelectorAll("textarea").forEach(t => {
+          t.addEventListener("input", () => {
+            updateField(id, t.getAttribute("data-field"), t.value);
+          });
+        });
+
+        const cb = rowEl.querySelector("input[type='checkbox'][data-field='forTranslation']");
+        if (cb) {
+          cb.addEventListener("change", () => updateField(id, "forTranslation", cb.checked));
+        }
+      });
+    }
+
+    // Payload helper (wire to Workato later)
+    function getData() {
+      return {
+        examCode: examCodeEl.value,
+        language: "English",
+        questions: data.map(q => ({
+          id: q.id,
+          section: q.section,
+          deleted: q.deleted,
+          forTranslation: q.forTranslation,
+          q: q.q,
+          responses: q.r
+        }))
+      };
+    }
+
+    // Save handler (demo)
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      console.log("SAVE payload:", getData());
+      alert("Saved (demo). Payload printed to console.");
+    });
+
+    // Assign random sections once, then render
+    assignRandomSectionsOnce();
+    render();
+  </script>
+</body>
+</html>
