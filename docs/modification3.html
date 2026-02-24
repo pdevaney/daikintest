@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Test Management</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root{
+      --bg:#f6f6f6;
+      --card:#fff;
+      --border:#ddd;
+      --muted:#666;
+      --header:#fafafa;
+      --rowEven:#fcfcfc;
+      --rowOdd:#ffffff;
+      --primary:#005eb8;
+      --primaryHover:#004a92;
+      --danger:#b00020;
+      --dangerHover:#8b0019;
+      --shadow: 0 6px 18px rgba(0,0,0,0.06);
+      --ok:#1b7f3a;
+      --warn:#8a6d00;
+    }
+
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 24px;
+      background: var(--bg);
+      color:#222;
+    }
+
+    h1{ font-size:24px; margin:0 0 14px 0; }
+
+    .card{
+      background: var(--card);
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 1700px;
+      margin: 0 auto;
+      box-shadow: var(--shadow);
+    }
+
+    .banner{
+      margin: 0 0 14px 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #eef4ff;
+      border: 1px solid #dbe8ff;
+      color:#123a78;
+      display:none;
+    }
+    .banner.show{ display:block; }
+    .banner.err{
+      background:#ffeef0;
+      border-color:#ffd0d6;
+      color:#7a1020;
+    }
+
+    /* ---------- Metadata ---------- */
+    .meta-grid{
+      display:grid;
+      grid-template-columns: 1.2fr 1.8fr 1.2fr 1.2fr 1.2fr;
+      gap: 16px;
+      margin-bottom: 10px;
+      align-items:end;
+    }
+    .field{ display:flex; flex-direction:column; }
+    label{ font-size: 13px; color:#555; margin-bottom: 4px; }
+
+    input, select{
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing:border-box;
+      background:#fff;
+    }
+    input[readonly]{
+      background:#f3f3f3;
+      color:#555;
+    }
+
+    .subline{
+      margin: 4px 0 14px 0;
+      color:#444;
+      font-size: 13px;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 12px;
+      align-items:center;
+    }
+    .pill{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      background:#fafafa;
+      color:#333;
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .pill strong{ font-weight:700; }
+
+    .small-note{
+      margin: 10px 0 12px 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* ---------- Table ---------- */
+    .table-wrap{
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .table-scroll{ overflow:auto; }
+
+    .grid{
+      display:grid;
+      grid-template-columns:
+        2.2fr   /* Question */
+        1.4fr   /* Resp 1 */
+        1.4fr   /* Resp 2 */
+        1.4fr   /* Resp 3 */
+        1.4fr   /* Resp 4 */
+        200px   /* Correct */
+        160px   /* For translation */
+        150px;  /* Actions */
+      gap: 12px;
+      padding: 12px;
+      min-width: 1650px;
+      box-sizing:border-box;
+      align-items:start;
+    }
+
+    .header-row{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: var(--header);
+      border-bottom: 2px solid var(--border);
+      font-weight: 700;
+      font-size: 12px;
+      color:#444;
+    }
+
+    .section-row{
+      grid-column: 1 / -1;
+      background: #f0f2f5;
+      border-top: 2px solid #ccc;
+      border-bottom: 2px solid #ccc;
+      padding: 10px 12px;
+      font-weight: 800;
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap: 12px;
+    }
+    .section-left{
+      display:flex;
+      gap:10px;
+      align-items:baseline;
+      flex-wrap:wrap;
+    }
+    .section-code{
+      font-size: 12px;
+      color:#555;
+      font-weight:700;
+      padding: 2px 8px;
+      border: 1px solid #d7d7d7;
+      background:#fafafa;
+      border-radius: 999px;
+    }
+
+    .row{ border-bottom: 1px solid #eee; }
+    .row:nth-child(even){ background: var(--rowEven); }
+    .row:nth-child(odd){ background: var(--rowOdd); }
+
+    .cell{
+      display:flex;
+      flex-direction:column;
+      padding: 4px;
+      box-sizing:border-box;
+    }
+
+    .q-number{
+      height: 20px;
+      font-weight: 800;
+      font-size: 12px;
+      color:#333;
+      margin-bottom: 4px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .seq-tag{
+      font-weight:700;
+      font-size:11px;
+      color:#555;
+      border: 1px solid #ddd;
+      background:#fafafa;
+      border-radius:999px;
+      padding: 2px 8px;
+    }
+
+    textarea{
+      width:100%;
+      min-height: 70px;   /* compact */
+      resize: vertical;
+      line-height: 1.35;
+      box-sizing:border-box;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-family: inherit;
+      font-size: 13px;
+      background:#fff;
+    }
+    textarea[readonly]{ background:#f3f3f3; color:#555; }
+
+    /* Correct column */
+    .correct-box{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px 10px;
+      padding-top: 24px; /* lines up with textarea top */
+    }
+    .correct-opt{
+      display:inline-flex;
+      gap: 6px;
+      align-items:center;
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .correct-opt input{ transform: scale(1.05); }
+
+    /* Translation column */
+    .flag{
+      display:flex;
+      align-items:center;
+      gap: 6px;
+      padding-top: 26px;
+      font-size: 13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .flag input{
+      transform: scale(1.15);
+      cursor:pointer;
+      flex-shrink:0;
+    }
+
+    /* Actions */
+    .actions{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding-top: 22px;
+    }
+    button{
+      border:none;
+      border-radius: 8px;
+      cursor:pointer;
+      font-size: 13px;
+      padding: 9px 10px;
+    }
+    .btn-sm{ padding: 8px 10px; font-size: 13px; }
+    .btn-primary{ background: var(--primary); color:#fff; }
+    .btn-primary:hover{ background: var(--primaryHover); }
+    .btn-danger{ background: var(--danger); color:#fff; }
+    .btn-danger:hover{ background: var(--dangerHover); }
+    .btn-muted{ background:#666; color:#fff; }
+    .btn-muted:hover{ background:#555; }
+    .btn-outline{
+      background:#fff;
+      border: 1px solid #ccc;
+      color:#333;
+    }
+    .btn-outline:hover{ background:#f5f5f5; }
+
+    /* Deleted row styling */
+    .deleted{
+      opacity: 0.6;
+      position: relative;
+    }
+    .deleted::after{
+      content:"DELETED";
+      position:absolute;
+      top: 10px;
+      right: 12px;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--danger);
+      background:#ffe8ec;
+      border: 1px solid #ffb6c2;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+    .deleted textarea,
+    .deleted input{
+      pointer-events:none;
+    }
+
+    /* Footer */
+    .footer{
+      margin-top: 16px;
+      display:flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .muted{
+      color:#666;
+      font-size: 12px;
+    }
+
+    @media (max-width: 1200px){
+      body{ margin:12px; }
+      .meta-grid{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>Test Management</h1>
+
+    <div id="banner" class="banner"></div>
+
+    <!-- Metadata -->
+    <div class="meta-grid">
+      <div class="field">
+        <label>Exam</label>
+        <select id="examCode">
+          <option value="">Loading exams…</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Exam Name</label>
+        <input id="examName" readonly />
+      </div>
+
+      <div class="field">
+        <label>Level</label>
+        <input id="examLevel" readonly />
+      </div>
+
+      <div class="field">
+        <label>Pillar</label>
+        <input id="examPillar" readonly />
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <input id="examStatus" readonly />
+      </div>
+    </div>
+
+    <div class="subline" id="testLine">
+      <span class="pill"><strong>Test:</strong> <span id="testName">—</span></span>
+      <span class="pill"><strong>Language:</strong> <span id="testLang">—</span></span>
+      <span class="pill"><strong>Test Code:</strong> <span id="testCode">—</span></span>
+    </div>
+
+    <p class="small-note">
+      Edit questions and answers. Choose exactly one correct answer (A1–A4).
+      Tick “For translation” to queue this question for translation.
+      Delete is safe (undoable) and will be sent to the API so the database can remove the question.
+      Questions are grouped by category and ordered by question sequence.
+    </p>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <div class="grid header-row">
+          <div>Question</div>
+          <div>Resp 1</div>
+          <div>Resp 2</div>
+          <div>Resp 3</div>
+          <div>Resp 4</div>
+          <div>Correct</div>
+          <div>For translation</div>
+          <div>Actions</div>
+        </div>
+
+        <div id="rows"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="muted" id="stats">0 questions</div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button type="button" class="btn-outline" id="reloadBtn">Reload</button>
+        <button type="button" class="btn-primary" id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------------------------
+    // CONFIG
+    // -------------------------
+    const API = {
+      EXAM_LIST_URL: "https://apim.workato.com/213564_daikinj/exam_management-v1/exam_list",
+      TEST_MANAGE_URL: "https://apim.workato.com/213564_daikinj/exam_management-v1/test_manage",
+      // TODO: implement later
+      TEST_SAVE_URL:  "https://apim.workato.com/213564_daikinj/exam_management-v1/test_save"
+    };
+
+    // Put your token here (or load from elsewhere)
+    const API_TOKEN = "e8f6da6c84437a95ceafe4f4e9b2140f56fe77b327b4839463d79f3f103f584a";
+
+    function buildHeaders() {
+      return {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Api-Token": API_TOKEN
+      };
+    }
+
+    // -------------------------
+    // DOM
+    // -------------------------
+    const bannerEl = document.getElementById("banner");
+
+    const examCodeEl   = document.getElementById("examCode");
+    const examNameEl   = document.getElementById("examName");
+    const examLevelEl  = document.getElementById("examLevel");
+    const examPillarEl = document.getElementById("examPillar");
+    const examStatusEl = document.getElementById("examStatus");
+
+    const testNameEl = document.getElementById("testName");
+    const testLangEl = document.getElementById("testLang");
+    const testCodeEl = document.getElementById("testCode");
+
+    const rowsEl  = document.getElementById("rows");
+    const statsEl = document.getElementById("stats");
+
+    const reloadBtn = document.getElementById("reloadBtn");
+    const saveBtn   = document.getElementById("saveBtn");
+
+    // -------------------------
+    // UI helpers
+    // -------------------------
+    function banner(msg, isErr=false) {
+      if (!msg) {
+        bannerEl.textContent = "";
+        bannerEl.classList.remove("show","err");
+        return;
+      }
+      bannerEl.textContent = msg;
+      bannerEl.classList.add("show");
+      bannerEl.classList.toggle("err", !!isErr);
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function asInt(v, fallback=0) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    // -------------------------
+    // State
+    // -------------------------
+    let examsIndex = new Map(); // code -> exam object
+    let currentTest = null;     // raw test payload
+    let data = [];              // editable list of questions (our model)
+    let loadedExamCode = "";
+
+    // data item shape:
+    // {
+    //   question_code, question_category_code, question_category_name,
+    //   question_sequence (number),
+    //   question_text,
+    //   answers: [{answer_code, answer_title, is_correct} x4],
+    //   translation (bool),
+    //   deleted (bool)
+    // }
+
+    // -------------------------
+    // API helpers
+    // -------------------------
+    async function fetchJson(url) {
+      const res = await fetch(url, {
+        method: "GET",
+        headers: buildHeaders(),
+        mode: "cors"
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        const detail = text ? ` – ${text.slice(0, 300)}` : "";
+        throw new Error(`HTTP ${res.status} ${res.statusText}${detail}`);
+      }
+
+      return res.json();
+    }
+
+    async function postJson(url, bodyObj) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: buildHeaders(),
+        mode: "cors",
+        body: JSON.stringify(bodyObj)
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        const detail = text ? ` – ${text.slice(0, 300)}` : "";
+        throw new Error(`HTTP ${res.status} ${res.statusText}${detail}`);
+      }
+
+      return res.json();
+    }
+
+    // -------------------------
+    // Load exams
+    // -------------------------
+    async function loadExamList() {
+      banner("Loading exams…");
+      examCodeEl.innerHTML = `<option value="">Loading exams…</option>`;
+      examsIndex = new Map();
+
+      const payload = await fetchJson(API.EXAM_LIST_URL);
+
+      const list = Array.isArray(payload?.data) ? payload.data : [];
+      list.forEach(e => {
+        if (e?.code) examsIndex.set(e.code, e);
+      });
+
+      const codes = Array.from(examsIndex.keys()).sort((a,b) => a.localeCompare(b));
+
+      examCodeEl.innerHTML = `<option value="">Select exam…</option>` +
+        codes.map(code => `<option value="${escapeHtml(code)}">${escapeHtml(code)}</option>`).join("");
+
+      banner("");
+    }
+
+    function applyExamMeta(code) {
+      const e = examsIndex.get(code);
+      examNameEl.value   = e?.name   ?? "";
+      examLevelEl.value  = e?.level  ?? "";
+      examPillarEl.value = e?.pillar ?? "";
+      examStatusEl.value = e?.status ?? "";
+    }
+
+    // -------------------------
+    // Load test for an exam
+    // -------------------------
+    function normaliseTestToModel(testJson) {
+      const qs = Array.isArray(testJson?.questions) ? testJson.questions : [];
+
+      const model = qs.map(q => {
+        const answers = Array.isArray(q.answers) ? q.answers : [];
+        // ensure exactly 4 answers (pad if needed)
+        const padded = [];
+        for (let i=0; i<4; i++){
+          padded[i] = answers[i] || { answer_code: "", answer_title: "", is_correct: false };
+        }
+
+        return {
+          question_code: q.question_code || "",
+          question_category_code: q.question_category_code || "",
+          question_category_name: q.question_category_name || "Section",
+          question_sequence: asInt(q.question_sequence, 0),
+          question_text: q.question_text || "",
+          answers: padded.map(a => ({
+            answer_code: a.answer_code || "",
+            answer_title: a.answer_title || "",
+            is_correct: !!a.is_correct
+          })),
+          translation: !!q.translation,
+          deleted: false
+        };
+      });
+
+      return model;
+    }
+
+    function groupedByCategory(items) {
+      const map = new Map();
+      items.forEach(it => {
+        const key = it.question_category_name || "Section";
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(it);
+      });
+
+      // sort categories by name (stable, predictable)
+      const groups = Array.from(map.entries()).sort((a,b) => a[0].localeCompare(b[0]));
+
+      // sort within group by sequence (numeric)
+      groups.forEach(([name, arr]) => {
+        arr.sort((x,y) => (x.question_sequence - y.question_sequence) || x.question_code.localeCompare(y.question_code));
+      });
+
+      return groups;
+    }
+
+    async function loadTest(examCode) {
+      if (!examCode) return;
+
+      banner("Loading test…");
+      rowsEl.innerHTML = "";
+      statsEl.textContent = "0 questions";
+
+      applyExamMeta(examCode);
+
+      const url = `${API.TEST_MANAGE_URL}?exam_code=${encodeURIComponent(examCode)}`;
+      const testJson = await fetchJson(url);
+
+      if (testJson?.status !== "success") {
+        throw new Error(`API returned status "${testJson?.status ?? "unknown"}"`);
+      }
+
+      currentTest = testJson;
+      loadedExamCode = examCode;
+
+      // Test line
+      testNameEl.textContent = testJson.test_name || "—";
+      testLangEl.textContent = testJson.language_name || "—";
+      testCodeEl.textContent = testJson.test_code || "—";
+
+      // Model
+      data = normaliseTestToModel(testJson);
+
+      render();
+      banner("");
+    }
+
+    // -------------------------
+    // Editing helpers
+    // -------------------------
+    function findByQuestionCode(qcode) {
+      return data.findIndex(x => x.question_code === qcode);
+    }
+
+    function setQuestionField(qcode, field, value) {
+      const idx = findByQuestionCode(qcode);
+      if (idx === -1) return;
+
+      if (field === "question_text") data[idx].question_text = value;
+      if (field === "translation") data[idx].translation = !!value;
+    }
+
+    function setAnswerTitle(qcode, aIdx, value) {
+      const idx = findByQuestionCode(qcode);
+      if (idx === -1) return;
+      if (aIdx < 0 || aIdx > 3) return;
+
+      data[idx].answers[aIdx].answer_title = value;
+    }
+
+    function setCorrectIndex(qcode, correctIdx) {
+      const idx = findByQuestionCode(qcode);
+      if (idx === -1) return;
+      const ci = asInt(correctIdx, -1);
+      if (ci < 0 || ci > 3) return;
+
+      data[idx].answers.forEach((a, i) => a.is_correct = (i === ci));
+    }
+
+    function markDeleted(qcode, isDeleted) {
+      const idx = findByQuestionCode(qcode);
+      if (idx === -1) return;
+      data[idx].deleted = !!isDeleted;
+      render();
+    }
+
+    // -------------------------
+    // Render
+    // -------------------------
+    function render() {
+      rowsEl.innerHTML = "";
+
+      // We keep deleted items visible (with DELETED badge) until save,
+      // but you said: "They should be removed from the screen."
+      // So: hide deleted items from the display list, BUT still keep them in data for save.
+      const visible = data.filter(q => !q.deleted);
+
+      const groups = groupedByCategory(visible);
+
+      let questionCounter = 0;
+
+      groups.forEach(([catName, items]) => {
+        const sectionHeader = document.createElement("div");
+        sectionHeader.className = "section-row";
+        const anyCode = items[0]?.question_category_code || "";
+        sectionHeader.innerHTML = `
+          <div class="section-left">
+            <div>${escapeHtml(catName)}</div>
+            ${anyCode ? `<div class="section-code">${escapeHtml(anyCode)}</div>` : ""}
+          </div>
+          <div style="font-size:12px; color:#555; font-weight:700;">
+            ${items.length} question${items.length === 1 ? "" : "s"}
+          </div>
+        `;
+        rowsEl.appendChild(sectionHeader);
+
+        items.forEach(item => {
+          questionCounter++;
+
+          const correctIndex = item.answers.findIndex(a => a.is_correct);
+          const seqLabel = item.question_sequence ? `Seq ${item.question_sequence}` : "";
+
+          const row = document.createElement("div");
+          row.className = "grid row";
+          row.dataset.qcode = item.question_code;
+
+          const respCells = [0,1,2,3].map(i => {
+            const a = item.answers[i] || {};
+            return `
+              <div class="cell">
+                <textarea data-atype="answer" data-idx="${i}">${escapeHtml(a.answer_title || "")}</textarea>
+              </div>
+            `;
+          }).join("");
+
+          row.innerHTML = `
+            <div class="cell">
+              <div class="q-number">
+                <span>Q${questionCounter}</span>
+                ${seqLabel ? `<span class="seq-tag">${escapeHtml(seqLabel)}</span>` : ""}
+              </div>
+              <textarea data-qtype="question">${escapeHtml(item.question_text || "")}</textarea>
+            </div>
+
+            ${respCells}
+
+            <div class="cell">
+              <div class="correct-box">
+                ${[0,1,2,3].map(i => `
+                  <label class="correct-opt">
+                    <input type="radio"
+                           name="correct_${escapeHtml(item.question_code)}"
+                           data-ctype="correct"
+                           value="${i}"
+                           ${i === correctIndex ? "checked" : ""} />
+                    A${i+1}
+                  </label>
+                `).join("")}
+              </div>
+            </div>
+
+            <div class="cell">
+              <div class="flag">
+                <input type="checkbox" data-qtype="translation" ${item.translation ? "checked" : ""} />
+                <span>For translation</span>
+              </div>
+            </div>
+
+            <div class="cell">
+              <div class="actions">
+                <button type="button" class="btn-sm btn-danger" data-delete="${escapeHtml(item.question_code)}">Delete</button>
+              </div>
+            </div>
+          `;
+
+          rowsEl.appendChild(row);
+        });
+      });
+
+      // Stats
+      const deletedCount = data.filter(q => q.deleted).length;
+      statsEl.textContent = `${visible.length} question${visible.length===1?"":"s"}`
+        + (deletedCount ? ` • ${deletedCount} marked for deletion` : "");
+
+      // Bind events (delegation-ish but simple)
+      rowsEl.querySelectorAll(".row").forEach(rowEl => {
+        const qcode = rowEl.dataset.qcode;
+
+        // question text
+        const qTa = rowEl.querySelector("textarea[data-qtype='question']");
+        if (qTa) {
+          qTa.addEventListener("input", () => setQuestionField(qcode, "question_text", qTa.value));
+        }
+
+        // answers
+        rowEl.querySelectorAll("textarea[data-atype='answer']").forEach(ta => {
+          const idx = asInt(ta.getAttribute("data-idx"), -1);
+          ta.addEventListener("input", () => setAnswerTitle(qcode, idx, ta.value));
+        });
+
+        // correct
+        rowEl.querySelectorAll("input[data-ctype='correct']").forEach(r => {
+          r.addEventListener("change", () => setCorrectIndex(qcode, r.value));
+        });
+
+        // translation
+        const cb = rowEl.querySelector("input[data-qtype='translation']");
+        if (cb) {
+          cb.addEventListener("change", () => setQuestionField(qcode, "translation", cb.checked));
+        }
+      });
+
+      // delete buttons
+      rowsEl.querySelectorAll("[data-delete]").forEach(btn => {
+        btn.addEventListener("click", () => markDeleted(btn.getAttribute("data-delete"), true));
+      });
+    }
+
+    // -------------------------
+    // Build SAVE payload
+    // -------------------------
+    function buildSavePayload() {
+      if (!currentTest) return null;
+
+      return {
+        exam_code: currentTest.exam_code,
+        test_code: currentTest.test_code,
+        test_name: currentTest.test_name,
+        language_name: currentTest.language_name,
+        // send all questions including deletions
+        questions: data.map(q => ({
+          question_code: q.question_code,
+          question_category_code: q.question_category_code,
+          question_category_name: q.question_category_name,
+          question_sequence: q.question_sequence,
+          question_text: q.question_text,
+          translation: !!q.translation,
+          deleted: !!q.deleted,
+          answers: q.answers.map(a => ({
+            answer_code: a.answer_code,
+            answer_title: a.answer_title,
+            is_correct: !!a.is_correct
+          }))
+        }))
+      };
+    }
+
+    // -------------------------
+    // Wire up UI
+    // -------------------------
+    examCodeEl.addEventListener("change", async () => {
+      const code = examCodeEl.value;
+      if (!code) return;
+
+      try{
+        await loadTest(code);
+      }catch(err){
+        console.error(err);
+        banner(`Failed to load test: ${err.message}`, true);
+      }
+    });
+
+    reloadBtn.addEventListener("click", async () => {
+      const code = examCodeEl.value || loadedExamCode;
+      if (!code) return;
+      try{
+        await loadTest(code);
+      }catch(err){
+        console.error(err);
+        banner(`Reload failed: ${err.message}`, true);
+      }
+    });
+
+    saveBtn.addEventListener("click", async () => {
+      if (!currentTest) {
+        banner("Select an exam first.", true);
+        return;
+      }
+
+      // Basic validation: exactly 1 correct per question
+      const invalid = data.filter(q => !q.deleted).filter(q => q.answers.filter(a => a.is_correct).length !== 1);
+      if (invalid.length) {
+        banner(`Save blocked: ${invalid.length} question(s) do not have exactly one correct answer.`, true);
+        return;
+      }
+
+      const payload = buildSavePayload();
+      console.log("SAVE payload:", payload);
+
+      // If you haven't built POST yet, we can just demo:
+      // alert("Saved (demo). Payload printed to console.");
+      // return;
+
+      try{
+        banner("Saving…");
+        saveBtn.disabled = true;
+        const res = await postJson(API.TEST_SAVE_URL, payload);
+        console.log("SAVE response:", res);
+
+        banner("Saved successfully.");
+        // After a successful save, you said deleted items should be removed from the screen.
+        // We already hide them immediately, but now we can physically remove from model too:
+        data = data.filter(q => !q.deleted);
+        render();
+      }catch(err){
+        console.error(err);
+        banner(`Save failed: ${err.message}`, true);
+      }finally{
+        saveBtn.disabled = false;
+      }
+    });
+
+    // -------------------------
+    // Init
+    // -------------------------
+    (async function init(){
+      try{
+        await loadExamList();
+        banner("Select an exam to load its test.");
+      }catch(err){
+        console.error(err);
+        banner(`Failed to load exam list: ${err.message}`, true);
+      }
+    })();
+  </script>
+</body>
+</html>
