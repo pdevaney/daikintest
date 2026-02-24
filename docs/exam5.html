@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Exams</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root{
+      --bg:#f6f6f6;
+      --card:#fff;
+      --border:#ddd;
+      --muted:#666;
+      --header:#fafafa;
+      --rowEven:#fcfcfc;
+      --rowOdd:#ffffff;
+      --primary:#005eb8;
+      --primaryHover:#004a92;
+      --danger:#b00020;
+      --shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
+
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 24px;
+      background: var(--bg);
+      color:#222;
+    }
+
+    .card{
+      background: var(--card);
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 1250px;
+      margin: 0 auto;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom: 12px;
+    }
+
+    h1{ margin: 0; font-size: 24px; }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .search{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    input, select{
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      background: #fff;
+    }
+
+    button{
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #fff;
+      background: var(--primary);
+    }
+    button:hover{ background: var(--primaryHover); }
+    button.secondary{ background:#666; }
+    button.secondary:hover{ background:#555; }
+    button.ghost{
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid #c9d7ea;
+    }
+    button.ghost:hover{ background:#f2f7ff; }
+
+    .table-wrap{
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 14px;
+    }
+
+    thead th{
+      position: sticky;
+      top: 0;
+      background: var(--header);
+      text-align:left;
+      font-weight: 700;
+      font-size: 12px;
+      color:#444;
+      padding: 12px 12px;
+      border-bottom: 2px solid var(--border);
+      z-index: 1;
+      white-space: nowrap;
+    }
+
+    tbody td{
+      padding: 12px 12px;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+
+    tbody tr:nth-child(even){ background: var(--rowEven); }
+    tbody tr:nth-child(odd){ background: var(--rowOdd); }
+
+    tbody tr.clickable{ cursor:pointer; }
+    tbody tr.clickable:hover{ background:#eef4ff; }
+
+    .pill{
+      display:inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      color:#333;
+      background:#fff;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .muted{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .banner{
+      margin: 10px 0 0 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #e6e6e6;
+      background: #fafafa;
+      font-size: 13px;
+      color:#444;
+      display:none;
+    }
+    .banner.error{
+      border-color:#ffb6c2;
+      background:#ffe8ec;
+      color:#7a0012;
+    }
+
+    /* Modal */
+    .modal-backdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 999;
+    }
+    .modal{
+      width: 100%;
+      max-width: 760px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+    .modal-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 14px 16px;
+      background: #fafafa;
+      border-bottom: 1px solid #e6e6e6;
+    }
+    .modal-title{
+      margin:0;
+      font-size: 16px;
+      font-weight: 800;
+      color:#222;
+    }
+    .modal-body{ padding: 16px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+    }
+    .field label{ font-size: 13px; color:#555; }
+
+    .divider{
+      height: 1px;
+      background:#eee;
+      margin: 14px 0;
+    }
+
+    .modal-footer{
+      padding: 14px 16px;
+      border-top: 1px solid #e6e6e6;
+      background:#fafafa;
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .lang-table{
+      width:100%;
+      border: 1px solid #e6e6e6;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .lang-table table{ width:100%; border-collapse: collapse; }
+    .lang-table th, .lang-table td{
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+      text-align:left;
+    }
+    .lang-table th{ background:#fafafa; font-size: 12px; color:#444; }
+
+    .status-chip{
+      display:inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      background:#fff;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+    .chip-translation{ background:#eef4ff; border-color:#c8d8ff; color:#20355d; }
+    .chip-review{ background:#fff1bf; border-color:#f0df95; color:#6a5200; }
+    .chip-submitted{ background:#e9f8ee; border-color:#bfe6c9; color:#15552e; }
+    .chip-published{ background:#f1f1f1; border-color:#d8d8d8; color:#333; }
+
+    .template-box{
+      border: 1px solid #e1e1e1;
+      border-radius: 8px;
+      padding: 10px;
+      background:#fff;
+    }
+    .template-list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      max-height: 170px;
+      overflow:auto;
+      padding-right: 4px;
+    }
+    .template-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 8px 10px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      background:#fff;
+    }
+    .template-item:hover{ background:#f7fbff; border-color:#dfeeff; }
+    .template-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
+    }
+    .template-left input{ transform: scale(1.12); flex-shrink: 0; }
+    .template-code{ font-weight: 800; font-size: 13px; color:#222; white-space: nowrap; }
+    .template-name{
+      font-size: 13px;
+      color:#555;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .template-meta{ font-size: 12px; color:#555; white-space: nowrap; }
+
+    .code-preview{
+      font-weight: 800;
+      color:#222;
+      background:#f3f6fb;
+      border: 1px solid #dce6f7;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .lang-table{
+      max-height: 340px;
+      overflow: auto;
+    }
+
+
+    .lang-table thead th{
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    @media (max-width: 820px){
+      .grid{ grid-template-columns: 1fr; }
+      body{ margin: 12px; }
+      .actions{ width:100%; justify-content:space-between; }
+      .search{ width:100%; }
+      .search input{ flex:1; width:100%; }
+    }
+ 
+    
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="topbar">
+      <h1>Exams</h1>
+
+      <div class="actions">
+        <div class="search">
+          <input id="search" placeholder="Search code or name…" />
+        </div>
+        <button id="refreshBtn" class="ghost" type="button">Refresh</button>
+        <button id="createExamBtn" type="button">Create exam</button>
+      </div>
+    </div>
+
+    <div id="banner" class="banner"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:140px;">Exam code</th>
+            <th>Exam name</th>
+            <th style="width:130px;">Level</th>
+            <th style="width:130px;">Pillar</th>
+            <th style="width:140px;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="examsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="muted">Click an exam to view review status by language.</div>
+  </div>
+
+  <!-- Exam details modal -->
+  <div class="modal-backdrop" id="examModalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="examModalTitle">
+      <div class="modal-header">
+        <h3 class="modal-title" id="examModalTitle">Exam</h3>
+        <button class="ghost" id="closeExamModalBtn" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div id="examModalMeta" class="muted" style="margin:0 0 10px 0;"></div>
+
+        <div class="lang-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Language</th>
+                <th style="width:220px;">Review status</th>
+              </tr>
+            </thead>
+            <tbody id="langBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary" id="closeExamModalBtn2" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create exam modal -->
+  <div class="modal-backdrop" id="createModalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
+      <div class="modal-header">
+        <h3 class="modal-title" id="createModalTitle">Create exam</h3>
+        <button class="ghost" id="closeCreateModalBtn" type="button">Close</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="createError" class="banner error" style="display:none; margin:0 0 12px 0;"></div>
+        <div class="grid">
+          <div class="field">
+            <label>Exam year</label>
+            <input id="newExamYear" value="2026" placeholder="2025–2040" inputmode="numeric" />
+            <div class="muted" id="yearHint" style="margin:0;">Allowed years: 2025–2040</div>
+          </div>
+
+          <div class="field">
+            <label>Exam Name</label>
+            <input id="newExamName" placeholder="e.g. Refrigeration Essentials" />
+          </div>
+
+          <div class="field">
+            <label>Level</label>
+            <select id="newExamLevel">
+              <option value="" selected>(select)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Pillar</label>
+            <select id="newExamPillar">
+              <option value="" selected>(select)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Generated exam code</label>
+          <div class="code-preview" id="codePreview">—</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <label>Template (select one or more existing exams)</label>
+          <div class="template-box">
+            <div class="template-list" id="templateList"></div>
+          </div>
+          <div class="muted" style="margin-top:8px;">
+            Selecting a template will set Level and Pillar by default (you can change them).
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="secondary" id="cancelCreateBtn" type="button">Cancel</button>
+        <button id="confirmCreateBtn" type="button">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================
+    // API CONFIG
+    // ============================
+    const API = {
+      LIST_EXAMS_URL: "https://apim.workato.com/213564_daikinj/exam_management-v1/exam_manage",
+      EXAM_CREATE_URL: "https://apim.workato.com/213564_daikinj/exam_management-v1/exam_create",
+      API_TOKEN: "f0a6b311ff27af49708d2b32f088f903bc6ed062ff3e34aad62cbac41d5404d0" // <-- replace with your real token
+    };
+
+    // ============================
+    // State
+    // ============================
+    let exams = [];
+    let levelRecords = [];
+    let pillarRecords = [];
+
+    // ============================
+    // Helpers
+    // ============================
+    function normalize(s){ return String(s || "").toLowerCase().trim(); }
+
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function showCreateError(msg){
+        const el = document.getElementById("createError");
+        el.textContent = msg;
+        el.style.display = "block";
+        el.scrollIntoView({ block: "nearest" });
+    }
+
+    function clearCreateError(){
+        const el = document.getElementById("createError");
+        el.textContent = "";
+        el.style.display = "none";
+    }
+
+    function banner(msg, isError=false){
+      const el = document.getElementById("banner");
+      if (!msg){
+        el.style.display = "none";
+        el.textContent = "";
+        el.classList.remove("error");
+        return;
+      }
+      el.style.display = "block";
+      el.textContent = msg;
+      el.classList.toggle("error", !!isError);
+    }
+
+    function statusPill(status){
+      const text = String(status || "").trim();
+      return `<span class="pill">${escapeHtml(text)}</span>`;
+    }
+
+    function langChip(status){
+      const s = normalize(status);
+      if (s === "in translation") return `<span class="status-chip chip-translation">In translation</span>`;
+      if (s === "in review") return `<span class="status-chip chip-review">In review</span>`;
+      if (s === "submitted") return `<span class="status-chip chip-submitted">Submitted</span>`;
+      return `<span class="status-chip chip-published">Published</span>`;
+    }
+
+    function buildHeaders(){
+      return {
+        "Accept": "application/json",
+        "api-token": API.API_TOKEN
+      };
+    }
+    
+   async function createExam(payload){
+        const res = await fetch(API.EXAM_CREATE_URL, {
+          method: "POST",
+          headers: {
+            ...buildHeaders(),
+            "Content-Type": "application/json"
+          },
+          mode: "cors",
+          body: JSON.stringify(payload)
+        });
+
+        // Try to parse response body (JSON preferred)
+        const contentType = res.headers.get("content-type") || "";
+        const isJson = contentType.includes("application/json");
+
+        let body = null;
+        try{
+          body = isJson ? await res.json() : await res.text();
+        }catch{
+          body = isJson ? {} : "";
+        }
+
+        const status = res.status;
+
+        // Success: you said 201
+        if (status === 201){
+          // If you return JSON, great; if not, still treat as success.
+          return body;
+        }
+
+        // Helper to extract a useful message (if you include one)
+        const extractMessage = () => {
+          if (typeof body === "string") return body.trim();
+          if (body && typeof body === "object"){
+            return String(body.message || body.error || body.details || body.status || "").trim();
+          }
+          return "";
+        };
+
+        const msg = extractMessage();
+
+        // Validation errors
+        if (status === 400){
+          // Prefer message from API if present; otherwise show a friendly generic
+          throw new Error(msg || "Invalid input. Please check the year, level, pillar, and template and try again.");
+        }
+
+        // Duplicate
+        if (status === 409){
+          throw new Error("That exam code already exists. Please choose a different year/level/pillar combination.");
+        }
+
+        // Other server errors
+        if (status >= 500){
+          throw new Error("The server had a problem creating the exam. Please try again in a moment.");
+        }
+
+        // Anything else unexpected (e.g. 401/403)
+        throw new Error(msg || `Create failed (HTTP ${status}).`);
+    }
+
+    // Payload shape:
+    // {
+    //   pillars: [{pillar_code, pillar_name}, ...],
+    //   levels_records: [{level_code, level_name}, ...],
+    //   Data: [{Code, Name, Level, Pillar, Status, Languages:[{Lang, review_status}]}]
+    // }
+    function extractExamArray(json){
+      if (json && Array.isArray(json.Data)) return json.Data;
+      if (json && Array.isArray(json.data)) return json.data; // fallback
+      return [];
+    }
+
+    function extractLists(json){
+      const pillars = Array.isArray(json?.pillars) ? json.pillars : [];
+      const levels = Array.isArray(json?.levels_records) ? json.levels_records : [];
+      return { pillars, levels };
+    }
+
+    function normaliseExam(e){
+  return {
+    code: String(e?.code ?? e?.Code ?? "").trim(),
+    name: String(e?.name ?? e?.Name ?? "").trim(),
+    level: String(e?.level ?? e?.Level ?? "").trim(),
+    pillar: String(e?.pillar ?? e?.Pillar ?? "").trim(),
+    status: String(e?.status ?? e?.Status ?? "").trim(),
+    languages: Array.isArray(e?.languages ?? e?.Languages) ? (e.languages ?? e.Languages) : []
+  };
+}
+
+    function setSelectOptionsFromRecords(selectEl, records, valueKey, labelKey){
+      // Preserve / create the first blank option
+      let blank = selectEl.querySelector('option[value=""]');
+      selectEl.innerHTML = "";
+
+      if (!blank){
+        blank = document.createElement("option");
+        blank.value = "";
+        blank.textContent = "(select)";
+      }
+      blank.selected = true;
+      selectEl.appendChild(blank);
+
+      (records || []).forEach(r => {
+        const label = String(r?.[labelKey] ?? "").trim();
+        if (!label) return;
+
+        const opt = document.createElement("option");
+        // IMPORTANT: value is the display text because exams store "Level 4", "Pillar A"
+        opt.value = label;
+        opt.textContent = label;
+        selectEl.appendChild(opt);
+      });
+    }
+
+    function forceBlankSelect(selectEl){
+      selectEl.value = "";
+      selectEl.selectedIndex = 0;
+    }
+
+    // ============================
+    // Load exams from API
+    // ============================
+    async function loadExams(){
+      banner("Loading exams…");
+      try{
+        const res = await fetch(API.LIST_EXAMS_URL, {
+          method: "GET",
+          headers: buildHeaders(),
+          mode: "cors"
+        });
+
+        if (!res.ok){
+          const text = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status} ${res.statusText}${text ? " – " + text : ""}`);
+        }
+
+        const json = await res.json();
+        console.log("API raw response:", json);
+        console.log("PILLARS raw:", json.pillars);
+console.log("PILLARS keys at top level:", Object.keys(json));
+        console.log("Top-level keys:", Object.keys(json));
+        console.log("json.data length:", Array.isArray(json.data) ? json.data.length : "not an array");
+        console.log("json.Data length:", Array.isArray(json.Data) ? json.Data.length : "not an array");
+        console.log("json.result?.data length:", Array.isArray(json?.result?.data) ? json.result.data.length : "not an array");
+        console.log("json.result?.Data length:", Array.isArray(json?.result?.Data) ? json.result.Data.length : "not an array");
+// Your real payload lives here
+const payload = json.response || {};
+
+// Extract lists
+const pillars = Array.isArray(payload.pillars) ? payload.pillars : [];
+const levels = Array.isArray(payload.levels_records) ? payload.levels_records : [];
+
+console.log("Levels count:", levels.length);
+console.log("Pillars count:", pillars.length);
+
+// Populate dropdowns
+setSelectOptionsFromRecords(newExamLevel, levels, "level_code", "level_name");
+setSelectOptionsFromRecords(newExamPillar, pillars, "pillar_code", "pillar_name");
+
+// Always default to blank
+forceBlankSelect(newExamLevel);
+forceBlankSelect(newExamPillar);
+
+// Extract exams
+const rawExams = Array.isArray(payload.data) ? payload.data : [];
+exams = rawExams.map(normaliseExam);
+exams.sort((a, b) => {
+  const A = String(a.code || "");
+  const B = String(b.code || "");
+  return B.localeCompare(A, undefined, { numeric: true, sensitivity: "base" });
+});
+console.log("exams after normalise:", exams);
+console.log("exams[0].code:", exams[0]?.code);
+
+console.log("Exams count:", exams.length);
+
+renderExams();
+renderTemplates();
+
+      }catch(err){
+        exams = [];
+        renderExams();
+        renderTemplates();
+        banner(`Could not load exams: ${err.message}`, true);
+        console.error(err);
+      }
+    }
+
+    // ============================
+    // Render exams table
+    // ============================
+    const examsBody = document.getElementById("examsBody");
+    const searchEl = document.getElementById("search");
+
+    function renderExams(){
+      const q = normalize(searchEl.value);
+      const filtered = exams.filter(e => {
+        if (!q) return true;
+        return normalize(e.code).includes(q) || normalize(e.name).includes(q);
+      });
+
+      if (!filtered.length){
+        examsBody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding:16px; color:#666; font-size:13px;">
+              No exams to display.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      examsBody.innerHTML = filtered.map(e => `
+        <tr class="clickable" data-code="${escapeHtml(e.code)}" title="Click to view language statuses">
+          <td><strong>${escapeHtml(e.code)}</strong></td>
+          <td>${escapeHtml(e.name)}</td>
+          <td>${escapeHtml(e.level)}</td>
+          <td>${escapeHtml(e.pillar)}</td>
+          <td>${statusPill(e.status)}</td>
+        </tr>
+      `).join("");
+
+      examsBody.querySelectorAll("tr[data-code]").forEach(row => {
+        row.addEventListener("click", () => {
+          const code = row.getAttribute("data-code");
+          const exam = exams.find(x => x.code === code);
+          if (exam) openExamModal(exam);
+        });
+      });
+    }
+
+    searchEl.addEventListener("input", renderExams);
+    document.getElementById("refreshBtn").addEventListener("click", loadExams);
+
+    // ============================
+    // Exam details modal
+    // ============================
+    const examModalBackdrop = document.getElementById("examModalBackdrop");
+    const examModalTitle = document.getElementById("examModalTitle");
+    const examModalMeta = document.getElementById("examModalMeta");
+    const langBody = document.getElementById("langBody");
+
+    function openExamModal(exam){
+      examModalTitle.textContent = `${exam.code} – ${exam.name}`;
+      examModalMeta.textContent = `${exam.level || "(no level)"} • ${exam.pillar || "(no pillar)"} • Status: ${exam.status}`;
+
+      const langs = Array.isArray(exam.languages) ? exam.languages : [];
+      langBody.innerHTML = (langs.length ? langs : [{ Lang:"(none)", review_status:"In translation" }]).map(l => {
+        const lang = l.Lang ?? l.lang ?? "";
+        const st = l.review_status ?? l.reviewStatus ?? l.status ?? "In translation";
+        return `
+          <tr>
+            <td>${escapeHtml(lang)}</td>
+            <td>${langChip(st)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      showModal(examModalBackdrop);
+    }
+
+    function closeExamModal(){ hideModal(examModalBackdrop); }
+    document.getElementById("closeExamModalBtn").addEventListener("click", closeExamModal);
+    document.getElementById("closeExamModalBtn2").addEventListener("click", closeExamModal);
+
+    // ============================
+    // Create exam modal
+    // ============================
+    const createModalBackdrop = document.getElementById("createModalBackdrop");
+    const createExamBtn = document.getElementById("createExamBtn");
+    const closeCreateModalBtn = document.getElementById("closeCreateModalBtn");
+    const cancelCreateBtn = document.getElementById("cancelCreateBtn");
+    const confirmCreateBtn = document.getElementById("confirmCreateBtn");
+
+    const newExamYear = document.getElementById("newExamYear");
+    const newExamName = document.getElementById("newExamName");
+    const newExamLevel = document.getElementById("newExamLevel");
+    const newExamPillar = document.getElementById("newExamPillar");
+    const templateList = document.getElementById("templateList");
+    const codePreview = document.getElementById("codePreview");
+    const yearHint = document.getElementById("yearHint");
+
+    function parseYearInt(y){
+      const n = Number(String(y || "").trim());
+      return Number.isInteger(n) ? n : NaN;
+    }
+    function isValidYearRange(y){
+      const n = parseYearInt(y);
+      return n >= 2025 && n <= 2040;
+    }
+
+    function pillarCodeFromName(pillarName){
+      const p = String(pillarName || "").toUpperCase();
+      if (p.includes("PILLAR A")) return "PA";
+      if (p.includes("PILLAR B")) return "PB";
+      return "";
+    }
+
+    function levelCodeFromName(levelName){
+      const m = String(levelName || "").match(/Level\s+(\d+)/i);
+      return m ? `L${m[1]}` : "";
+    }
+
+    // Generated code format to match your data e.g. 2026L4PA
+    function buildExamCode(year, levelName, pillarName){
+      const y = String(year || "").trim();
+      const l = levelCodeFromName(levelName);
+      const p = pillarCodeFromName(pillarName);
+      if (!y || !l || !p) return "—";
+      return `${y}${l}${p}`;
+    }
+
+    function updateCodePreview(){
+      const yearOk = isValidYearRange(newExamYear.value);
+      const code = buildExamCode(newExamYear.value, newExamLevel.value, newExamPillar.value);
+
+      if (!yearOk){
+        codePreview.textContent = "—";
+        yearHint.textContent = "Allowed years: 2025–2040 (invalid year entered)";
+        yearHint.style.color = "#b00020";
+      } else {
+        yearHint.textContent = "Allowed years: 2025–2040";
+        yearHint.style.color = "#666";
+        codePreview.textContent = code === "—" ? "Select Pillar and Level to generate code" : code;
+      }
+    }
+
+    function renderTemplates(){
+      templateList.innerHTML = (exams || []).map(e => `
+        <div class="template-item">
+          <div class="template-left">
+            <input type="checkbox" class="template-check" value="${escapeHtml(e.code)}" />
+            <div style="min-width:0;">
+              <div class="template-code">${escapeHtml(e.code)}</div>
+              <div class="template-name">${escapeHtml(e.name)}</div>
+            </div>
+          </div>
+          <div class="template-meta">${escapeHtml(e.level)} • ${escapeHtml(e.pillar)}</div>
+        </div>
+      `).join("");
+
+      templateList.querySelectorAll(".template-check").forEach(cb => {
+        cb.addEventListener("change", applyDefaultsFromTemplateSelection);
+      });
+    }
+
+    function setSelectValueOrBlank(selectEl, value){
+      const desired = String(value || "");
+      const has = Array.from(selectEl.options).some(o => o.value === desired);
+      selectEl.value = has ? desired : "";
+      if (!has) selectEl.selectedIndex = 0;
+    }
+
+    function applyDefaultsFromTemplateSelection(){
+      const selectedCodes = Array.from(templateList.querySelectorAll(".template-check:checked"))
+        .map(cb => cb.value);
+
+      if (!selectedCodes.length) return;
+
+      const first = exams.find(e => e.code === selectedCodes[0]);
+      if (!first) return;
+
+      setSelectValueOrBlank(newExamLevel, first.level);
+      setSelectValueOrBlank(newExamPillar, first.pillar);
+
+      updateCodePreview();
+    }
+
+    function clearCreateDefaults(){
+      forceBlankSelect(newExamLevel);
+      forceBlankSelect(newExamPillar);
+    }
+
+    function openCreateModal(){
+      clearCreateError();
+      newExamYear.value = "2026";
+      newExamName.value = "";
+
+      renderTemplates();
+      showModal(createModalBackdrop);
+
+      // Ensure blank defaults after open (reliable in iframes)
+      clearCreateDefaults();
+      updateCodePreview();
+    }
+
+    function closeCreateModal(){ hideModal(createModalBackdrop); }
+
+    createExamBtn.addEventListener("click", openCreateModal);
+    closeCreateModalBtn.addEventListener("click", closeCreateModal);
+    cancelCreateBtn.addEventListener("click", closeCreateModal);
+
+    [newExamYear, newExamLevel, newExamPillar].forEach(el => {
+      el.addEventListener("input", updateCodePreview);
+      el.addEventListener("change", updateCodePreview);
+    });
+
+    confirmCreateBtn.addEventListener("click", async () => {
+        clearCreateError();
+
+        const year = newExamYear.value.trim();
+        const examName = newExamName.value.trim();
+        const levelName = newExamLevel.value;   // "Level 4"
+        const pillarName = newExamPillar.value; // "Pillar A"
+
+        if (!isValidYearRange(year)){
+          showCreateError("Please enter a valid year between 2025 and 2040.");
+          return;
+        }
+        if (!examName){
+          showCreateError("Please enter an Exam Name.");
+          return;
+        }
+        if (!levelName){
+          showCreateError("Please select a Level.");
+          return;
+        }
+        if (!pillarName){
+          showCreateError("Please select a Pillar.");
+          return;
+        }
+
+        // Convert display names -> codes expected by API ("L3", "PA")
+        const levelCode = levelCodeFromName(levelName);
+        const pillarCode = pillarCodeFromName(pillarName);
+
+        if (!levelCode){
+          showCreateError("Could not determine the level code from the selected Level.");
+          return;
+        }
+        if (!pillarCode){
+          showCreateError("Could not determine the pillar code from the selected Pillar.");
+          return;
+        }
+
+        const examCode = `${year}${levelCode}${pillarCode}`;
+
+        // API expects a single template code (or blank)
+        const selectedTemplates = Array.from(templateList.querySelectorAll(".template-check:checked"))
+          .map(cb => cb.value);
+        const templateExamCode = selectedTemplates.length ? selectedTemplates[0] : "";
+
+        const payload = {
+          exam_code: examCode,
+          exam_name: examName,
+          level: levelCode,
+          pillar: pillarCode,
+          template_exam_code: templateExamCode
+    };
+
+  const originalText = confirmCreateBtn.textContent;
+  confirmCreateBtn.disabled = true;
+  confirmCreateBtn.textContent = "Creating…";
+
+  try{
+    // Don’t spam the main page banner for normal user input issues
+    banner("");
+
+    const result = await createExam(payload);
+    console.log("EXAM CREATE response:", result);
+
+    closeCreateModal();
+
+    banner(`Exam ${examCode} created successfully.`);
+    await loadExams(); // refresh list (and re-sort descending if you added that)
+  }catch(err){
+    console.error("Create failed:", err);
+
+    // Friendly message in the modal (keep it open)
+    showCreateError(err.message);
+
+    // Only show main banner if it looks like a system-level issue
+    const systemish = /server|problem|http\s?5|try again/i.test(err.message);
+    if (systemish){
+      banner(`Create failed: ${err.message}`, true);
+    }
+  }finally{
+    confirmCreateBtn.disabled = false;
+    confirmCreateBtn.textContent = originalText;
+  }
+});
+
+    // ============================
+    // Modal utilities
+    // ============================
+    function showModal(backdrop){
+      backdrop.style.display = "flex";
+      backdrop.setAttribute("aria-hidden", "false");
+    }
+    function hideModal(backdrop){
+      backdrop.style.display = "none";
+      backdrop.setAttribute("aria-hidden", "true");
+    }
+
+    [examModalBackdrop, createModalBackdrop].forEach(backdrop => {
+      backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop) hideModal(backdrop);
+      });
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if (createModalBackdrop.style.display === "flex") hideModal(createModalBackdrop);
+      else if (examModalBackdrop.style.display === "flex") hideModal(examModalBackdrop);
+    });
+
+    // ============================
+    // Boot
+    // ============================
+    loadExams();
+  </script>
+</body>
+</html>
