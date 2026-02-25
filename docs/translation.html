@@ -6,186 +6,287 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
-    body {
+    body{
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 24px;
-      background: #f6f6f6;
-      color: #222;
+      margin:24px;
+      background:#f6f6f6;
+      color:#222;
     }
 
-    h1 { margin: 0 0 16px 0; font-size: 24px; }
-    h2 {
-      margin: 20px 0 12px;
-      font-size: 18px;
-      border-bottom: 2px solid #ddd;
-      padding-bottom: 6px;
-    }
+    h1{ margin:0 0 16px 0; font-size:24px; }
 
-    .card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      max-width: 1550px;
-      margin: 0 auto;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    .card{
+      background:#fff;
+      padding:20px;
+      border-radius:8px;
+      max-width:1550px;
+      margin:0 auto;
+      box-shadow:0 6px 18px rgba(0,0,0,0.06);
     }
 
     /* ---------- Metadata ---------- */
-    .meta-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 16px;
-      margin-bottom: 18px;
+    .meta-grid{
+      display:grid;
+      grid-template-columns:180px 1.7fr 1fr 1fr 170px 220px 110px;
+      gap:16px;
+      margin-bottom:18px;
+      align-items:stretch;
     }
 
-    .field { display: flex; flex-direction: column; }
-    label { font-size: 13px; color: #555; margin-bottom: 4px; }
+    .field{ display:flex; flex-direction:column; gap:4px; }
 
-    select, input, textarea {
-      font-family: inherit;
-      font-size: 14px;
-      padding: 10px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
+    label{
+      font-size:13px;
+      color:#555;
+      line-height:16px;
+      height:16px;
+      margin:0;
     }
 
-    input[readonly], textarea[readonly] {
-      background: #f3f3f3;
-      color: #555;
+    select, input{
+      font-family:inherit;
+      font-size:14px;
+      border-radius:4px;
+      border:1px solid #ccc;
+      box-sizing:border-box;
+      padding:10px;
+      height:42px;
     }
+
+    input[readonly]{ background:#f3f3f3; color:#555; }
+
+    #btnLoad{
+      height:42px;
+      padding:0 16px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:6px;
+      border:none;
+      cursor:pointer;
+      color:#fff;
+      background:#444;
+      width:100%;
+    }
+    #btnLoad:hover{ background:#2f2f2f; }
+
+    /* ---------- Legend ---------- */
+    .legend{
+      display:flex;
+      gap:18px;
+      margin:10px 0 14px;
+      font-size:12px;
+      color:#555;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .swatch{
+      width:14px;
+      height:14px;
+      display:inline-block;
+      border-radius:3px;
+      border:1px solid #ccc;
+      margin-right:6px;
+      vertical-align:middle;
+    }
+    .swatch.correct{ background:#fff1bf; border-color:#f0df95; }
+    .swatch.selected{ background:#e9f7ee; border-color:#bfe7cc; }
+    .swatch.locked{ background:#f3f3f3; border-color:#d6d6d6; }
 
     /* ---------- Table ---------- */
-    .table-wrap {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      overflow: hidden;
-      background: #fff;
+    .table-wrap{
+      border:1px solid #ddd;
+      border-radius:8px;
+      overflow:hidden;
+      background:#fff;
     }
 
-    .table-scroll { overflow: auto; }
+    .table-scroll{ overflow:auto; }
 
-    .grid {
-      display: grid;
-      grid-template-columns:
-        2.4fr 2.2fr
-        1.6fr 1.6fr
-        1.6fr 1.6fr
-        1.6fr 1.6fr
-        1.6fr 1.6fr;
-      gap: 12px;
-      align-items: start;
-      padding: 12px;
-      min-width: 1500px;
-      box-sizing: border-box;
+    .grid{
+      display:grid;
+      grid-template-columns:2.6fr 1.4fr 1.4fr 1.4fr 1.4fr;
+      gap:12px;
+      align-items:stretch;
+      padding:12px;
+      min-width:1250px;
+      box-sizing:border-box;
     }
 
-    /* Sticky header */
-    .header-row {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      background: #fafafa;
-      border-bottom: 2px solid #ddd;
+    .header-row{
+      position:sticky;
+      top:0;
+      z-index:5;
+      background:#fafafa;
+      border-bottom:2px solid #ddd;
+      align-items:center;
     }
 
-    .header-cell {
-      font-weight: 700;
-      font-size: 12px;
-      color: #444;
+    .header-cell{
+      font-weight:700;
+      font-size:12px;
+      color:#444;
+      padding:2px 0;
     }
 
-    /* Section header */
-    .section-row {
-      grid-column: 1 / -1;
-      background: #f0f2f5;
-      border-top: 2px solid #ccc;
-      border-bottom: 2px solid #ccc;
-      font-weight: 700;
-      padding: 10px 12px;
+    .section-row{
+      grid-column:1 / -1;
+      background:#f0f2f5;
+      border-top:2px solid #ccc;
+      border-bottom:2px solid #ccc;
+      font-weight:700;
+      padding:10px 12px;
     }
 
-    .row { border-bottom: 1px solid #eee; }
-    .row:nth-child(even) { background: #fcfcfc; }
-    .row:nth-child(odd)  { background: #ffffff; }
+    .row{ border-bottom:1px solid #eee; }
+    .row:nth-child(even){ background:#fcfcfc; }
+    .row:nth-child(odd){ background:#ffffff; }
 
-    .cell { padding: 10px 4px; }
-
-    .cell textarea {
-      width: 100%;
-      min-height: 120px;
-      resize: vertical;
-      line-height: 1.35;
+    .cell{
+      padding:6px 2px;
+      display:flex;
     }
 
-    /* Question number */
-    .q-number {
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: #333;
+    .stack{
+      border:1px solid #ddd;
+      border-radius:8px;
+      overflow:hidden;
+      background:#fff;
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      width:100%;
+      height:100%;
+      transition: box-shadow 120ms ease, border-color 120ms ease;
+    }
+
+    .stack .source{
+      background:#f3f3f3;
+      padding:8px;
+      border-bottom:1px solid #ddd;
+      font-size:12.5px;
+      line-height:1.25;
+      color:#333;
+      white-space:pre-wrap;
+      flex:1 1 auto;
+      min-height:54px;
+    }
+
+    .stack textarea{
+      width:100%;
+      border:none;
+      padding:8px;
+      font-size:13px;
+      line-height:1.25;
+      min-height:68px;
+      resize:vertical;
+      box-sizing:border-box;
+      outline:none;
+      flex:0 0 auto;
+      background:#fff;
+    }
+
+    .q-badge{
+      position:absolute;
+      top:8px;
+      left:8px;
+      font-weight:700;
+      font-size:12px;
+      color:#333;
+      background:rgba(255,255,255,0.92);
+      padding:2px 6px;
+      border-radius:999px;
+      border:1px solid #e5e5e5;
+      pointer-events:none;
+    }
+    .stack.question .source{ padding-top:28px; }
+
+    /* Selected vs locked */
+    .row.selected{
+      box-shadow: inset 5px 0 0 #1d6b3a20;
+    }
+    .row.selected .stack{
+      border-color:#bfe7cc;
+    }
+    .row.selected .stack:hover{
+      box-shadow:0 0 0 2px #1d6b3a22;
+    }
+
+    .row.locked{
+      opacity:0.85;
+    }
+    .row.locked .stack{
+      border-color:#dadada;
+      background:#fafafa;
+    }
+    .row.locked .stack .source{
+      background:#f2f2f2;
+      color:#555;
+    }
+    .row.locked .stack textarea{
+      background:#f7f7f7;
+      color:#666;
+    }
+
+    .status-badge{
+      position:absolute;
+      top:8px;
+      right:8px;
+      font-weight:700;
+      font-size:11px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid transparent;
+      pointer-events:none;
+      background:#fff;
+    }
+    .status-badge.translate{
+      color:#15552e;
+      background:#e9f7ee;
+      border-color:#bfe7cc;
+    }
+    .status-badge.locked{
+      color:#555;
+      background:#f1f1f1;
+      border-color:#dadada;
     }
 
     /* Correct answer highlight */
-    .correct-highlight {
-      background: #fff1bf;
-      border-radius: 6px;
-      outline: 1px solid #f0df95;
+    .correct-highlight .source{
+      background:#fff1bf;
+      border-bottom-color:#f0df95;
     }
-
-    /* No-translation row */
-    .no-translation {
-      background: #eef4ff !important;
+    .correct-highlight{
+      outline:1px solid #f0df95;
+      border-radius:8px;
     }
-    .no-translation .cell textarea:not([readonly]) {
-      background: #eef4ff;
-      color: #3c4a66;
-      border-color: #c8d8ff;
-    }
-
-    .legend {
-      display: flex;
-      gap: 14px;
-      margin: 10px 0;
-      font-size: 12px;
-      color: #555;
-    }
-    .swatch {
-      width: 14px;
-      height: 14px;
-      display: inline-block;
-      border-radius: 3px;
-      border: 1px solid #ccc;
-      margin-right: 6px;
-    }
-    .swatch.correct { background: #fff1bf; border-color: #f0df95; }
-    .swatch.notreq { background: #eef4ff; border-color: #c8d8ff; }
 
     /* Footer buttons */
-    .footer {
-      margin-top: 16px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
+    .footer{
+      margin-top:16px;
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
     }
 
-    button {
-      padding: 10px 16px;
-      font-size: 14px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      color: white;
+    .btn{
+      padding:10px 16px;
+      font-size:14px;
+      border-radius:6px;
+      border:none;
+      cursor:pointer;
+      color:white;
     }
 
-    .btn-save { background: #005eb8; }
-    .btn-save:hover { background: #004a92; }
+    .btn-save{ background:#005eb8; }
+    .btn-save:hover{ background:#004a92; }
 
-    .btn-submit { background: #1d6b3a; }
-    .btn-submit:hover { background: #15552e; }
+    .btn-submit{ background:#1d6b3a; }
+    .btn-submit:hover{ background:#15552e; }
 
-    .btn-publish { background: #6b4fd3; }
-    .btn-publish:hover { background: #5840b3; }
+    .btn-publish{ background:#6b4fd3; }
+    .btn-publish:hover{ background:#5840b3; }
   </style>
 </head>
 
@@ -193,53 +294,61 @@
 <div class="card">
   <h1>Exam Translation Form</h1>
 
-  <!-- Metadata -->
   <div class="meta-grid">
     <div class="field">
       <label>Exam Code</label>
       <select id="examCode">
-        <option value="">Select exam</option>
-        <option value="EX-101">EX-101</option>
-        <option value="EX-202">EX-202</option>
-        <option value="EX-303">EX-303</option>
+        <option value="">Loading exams…</option>
       </select>
     </div>
 
-    <div class="field"><label>Exam Name</label><input id="examName" readonly /></div>
-    <div class="field"><label>Level</label><input id="examLevel" readonly /></div>
-    <div class="field"><label>Pillar</label><input id="examPillar" readonly /></div>
-    <div class="field"><label>Source language</label><input value="English" readonly /></div>
+    <div class="field">
+      <label>Exam Name</label>
+      <input id="examName" readonly />
+    </div>
+
+    <div class="field">
+      <label>Level</label>
+      <input id="examLevel" readonly />
+    </div>
+
+    <div class="field">
+      <label>Pillar</label>
+      <input id="examPillar" readonly />
+    </div>
+
+    <div class="field">
+      <label>Source language</label>
+      <input id="sourceLang" value="English" readonly />
+    </div>
+
     <div class="field">
       <label>Destination language</label>
-      <select>
-        <option>Japanese</option>
-        <option>French</option>
-        <option>German</option>
-        <option>Spanish</option>
-        <option>Korean</option>
-        <option>Chinese (Simplified)</option>
+      <select id="destLang">
+        <option value="">Loading languages…</option>
       </select>
+    </div>
+
+    <div class="field">
+      <label>&nbsp;</label>
+      <button id="btnLoad" type="button">Load</button>
     </div>
   </div>
 
   <div class="legend">
     <div><span class="swatch correct"></span>Correct answer</div>
-    <div><span class="swatch notreq"></span>No translation required</div>
+    <div><span class="swatch selected"></span>Selected for translation</div>
+    <div><span class="swatch locked"></span>Not selected for translation</div>
   </div>
 
   <div class="table-wrap">
     <div class="table-scroll">
       <div class="grid header-row">
-        <div class="header-cell">Question (Source)</div>
-        <div class="header-cell">Question (Translation)</div>
-        <div class="header-cell">Resp 1 (Source)</div>
-        <div class="header-cell">Resp 1 (Trans)</div>
-        <div class="header-cell">Resp 2 (Source)</div>
-        <div class="header-cell">Resp 2 (Trans)</div>
-        <div class="header-cell">Resp 3 (Source)</div>
-        <div class="header-cell">Resp 3 (Trans)</div>
-        <div class="header-cell">Resp 4 (Source)</div>
-        <div class="header-cell">Resp 4 (Trans)</div>
+        <div class="header-cell">Question</div>
+        <div class="header-cell">Resp 1</div>
+        <div class="header-cell">Resp 2</div>
+        <div class="header-cell">Resp 3</div>
+        <div class="header-cell">Resp 4</div>
       </div>
 
       <div id="rows"></div>
@@ -247,83 +356,285 @@
   </div>
 
   <div class="footer">
-    <button class="btn-save">Save</button>
-    <button class="btn-submit">Submit</button>
-    <button class="btn-publish">Publish</button>
+    <button id="btnSave" type="button" class="btn btn-save">Save</button>
+    <button id="btnSubmit" type="button" class="btn btn-submit">Submit</button>
+    <button id="btnPublish" type="button" class="btn btn-publish">Publish</button>
   </div>
 </div>
 
 <script>
-  const QUESTIONS_PER_SECTION = 3;
+  const API_TOKEN = "e8f6da6c84437a95ceafe4f4e9b2140f56fe77b327b4839463d79f3f103f584a";
 
-  const sample = [
-    { q: "Before starting the equipment, what should you do first?",
-      r: ["Start the machine", "Perform a safety check", "Skip checks", "Ask someone else"],
-      correctIndex: 1, noTranslationRequired: false },
+  const ENDPOINTS = {
+    examList: "https://apim.workato.com/213564_daikinj/exam_management-v1/exam_list",
+    testTranslate: "https://apim.workato.com/213564_daikinj/exam_management-v1/test_translate"
+  };
 
-    { q: "What does PPE stand for?",
-      r: ["Power Protection Equipment", "Personal Performance Evaluation",
-          "Personal Protective Equipment", "Public Protection Essentials"],
-      correctIndex: 2, noTranslationRequired: true },
-
-    { q: "If an alarm sounds, what is the best initial action?",
-      r: ["Continue working", "Mute the alarm", "Increase speed", "Stop and assess"],
-      correctIndex: 3, noTranslationRequired: false },
-
-    { q: "Which item should be checked for damage before use?",
-      r: ["Poster", "Desk lamp", "Safety guards", "Coffee cup"],
-      correctIndex: 2, noTranslationRequired: false },
-
-    { q: "What is the correct way to report a hazard?",
-      r: ["Follow procedure", "Mention later", "Fix quietly", "Wait"],
-      correctIndex: 0, noTranslationRequired: false },
-
-    { q: "Lockout/Tagout (LOTO) is required before what activity?",
-      r: ["Cleaning", "Maintenance", "Breaks", "Paperwork"],
-      correctIndex: 1, noTranslationRequired: true }
+  const LANGUAGES = [
+    { language_code: "ja", language_name: "Japanese" },
+    { language_code: "fr", language_name: "French" },
+    { language_code: "de", language_name: "German" },
+    { language_code: "es", language_name: "Spanish" },
+    { language_code: "ko", language_name: "Korean" },
+    { language_code: "zh-Hans", language_name: "Chinese (Simplified)" },
+    { language_code: "ge", language_name: "German (alt code: ge)" }
   ];
 
+  const MAX_ANSWERS = 4;
+
+  // ✅ Hard-coded selection BY QUESTION NUMBER (stable)
+  // Edit this list to change which questions are selected.
+  // About 1/3: 2,5,8,11,14,17,... (works regardless of question_code format)
+  const TRANSLATE_QUESTION_NUMBERS = new Set([2, 5, 8, 11, 14, 17, 20]);
+
   const rowsEl = document.getElementById("rows");
+  const examCodeEl = document.getElementById("examCode");
+  const examNameEl = document.getElementById("examName");
+  const examLevelEl = document.getElementById("examLevel");
+  const examPillarEl = document.getElementById("examPillar");
+  const destLangEl = document.getElementById("destLang");
 
-  sample.forEach((item, i) => {
-    if (i % QUESTIONS_PER_SECTION === 0) {
-      const section = document.createElement("div");
-      section.className = "section-row";
-      section.textContent = `Section ${Math.floor(i / QUESTIONS_PER_SECTION) + 1}`;
-      rowsEl.appendChild(section);
-    }
+  const btnLoad = document.getElementById("btnLoad");
+  const btnSave = document.getElementById("btnSave");
+  const btnSubmit = document.getElementById("btnSubmit");
+  const btnPublish = document.getElementById("btnPublish");
 
-    const row = document.createElement("div");
-    row.className = "grid row" + (item.noTranslationRequired ? " no-translation" : "");
+  function authHeaders() {
+    return {
+      "Content-Type": "application/json",
+      "Api-Token": API_TOKEN
+    };
+  }
 
-    const respCells = item.r.map((resp, idx) => {
-      const cls = idx === item.correctIndex ? "cell correct-highlight" : "cell";
-      return `
-        <div class="${cls}"><textarea readonly>${resp}</textarea></div>
-        <div class="${cls}"><textarea placeholder="Translated response"></textarea></div>
-      `;
-    }).join("");
+  function setLoading(isLoading) {
+    document.body.style.cursor = isLoading ? "progress" : "default";
+    btnLoad.disabled = isLoading;
+    examCodeEl.disabled = isLoading;
+    destLangEl.disabled = isLoading;
+  }
 
-    row.innerHTML = `
-      <div class="cell">
-        <div class="q-number">Q${i + 1}</div>
-        <textarea readonly>${item.q}</textarea>
-      </div>
-      <div class="cell">
-        <textarea placeholder="Translated question"></textarea>
-      </div>
-      ${respCells}
-    `;
+  function showError(msg, err) {
+    console.error(msg, err);
+    alert(msg);
+  }
 
-    if (item.noTranslationRequired) {
-      row.querySelectorAll("textarea:not([readonly])").forEach(t => {
-        t.placeholder = "No translation required";
-        t.readOnly = true;
+  function populateLanguages() {
+    destLangEl.innerHTML = `<option value="">Select language</option>`;
+    LANGUAGES.forEach(l => {
+      const opt = document.createElement("option");
+      opt.value = l.language_code;
+      opt.textContent = l.language_name;
+      destLangEl.appendChild(opt);
+    });
+  }
+
+  async function loadExamList() {
+    setLoading(true);
+    try {
+      const res = await fetch(ENDPOINTS.examList, { method: "GET", headers: authHeaders() });
+      if (!res.ok) throw new Error(`exam_list HTTP ${res.status}`);
+      const data = await res.json();
+
+      const list =
+        Array.isArray(data) ? data :
+        Array.isArray(data.exams) ? data.exams :
+        Array.isArray(data.data) ? data.data :
+        [];
+
+      examCodeEl.innerHTML = `<option value="">Select exam</option>`;
+
+      list.forEach(ex => {
+        const code = ex.exam_code || ex.examCode || ex.code;
+        const name = ex.exam_name || ex.examName || ex.name || "";
+        if (!code) return;
+
+        const opt = document.createElement("option");
+        opt.value = code;
+        opt.textContent = name ? `${code} — ${name}` : code;
+
+        opt.dataset.examName = name;
+        opt.dataset.examLevel = ex.level || ex.exam_level || "";
+        opt.dataset.examPillar = ex.pillar || ex.exam_pillar || "";
+        examCodeEl.appendChild(opt);
       });
+
+      examCodeEl.addEventListener("change", () => {
+        const opt = examCodeEl.selectedOptions[0];
+        if (!opt || !examCodeEl.value) {
+          examNameEl.value = "";
+          examLevelEl.value = "";
+          examPillarEl.value = "";
+          rowsEl.innerHTML = "";
+          return;
+        }
+        examNameEl.value = opt.dataset.examName || "";
+        examLevelEl.value = opt.dataset.examLevel || "";
+        examPillarEl.value = opt.dataset.examPillar || "";
+      });
+
+    } catch (err) {
+      examCodeEl.innerHTML = `<option value="">Select exam</option>`;
+      showError("Could not load exam list.", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function makeStackCell({ isQuestion, qNumber, status, sourceText, destText, placeholder, isCorrect, disabled }) {
+    const outer = document.createElement("div");
+    outer.className = "cell";
+
+    const stack = document.createElement("div");
+    stack.className = "stack" + (isCorrect ? " correct-highlight" : "") + (isQuestion ? " question" : "");
+
+    if (isQuestion && qNumber) {
+      const badge = document.createElement("div");
+      badge.className = "q-badge";
+      badge.textContent = `Q${qNumber}`;
+      stack.appendChild(badge);
     }
 
-    rowsEl.appendChild(row);
-  });
+    if (isQuestion && status) {
+      const s = document.createElement("div");
+      s.className = "status-badge " + (status === "translate" ? "translate" : "locked");
+      s.textContent = (status === "translate") ? "Translate" : "Not required";
+      stack.appendChild(s);
+    }
+
+    const src = document.createElement("div");
+    src.className = "source";
+    src.textContent = sourceText || "";
+
+    const ta = document.createElement("textarea");
+    ta.placeholder = placeholder || "";
+    ta.value = destText || "";
+    if (disabled) {
+      ta.readOnly = true;
+      ta.placeholder = "Not selected for translation";
+    }
+
+    stack.appendChild(src);
+    stack.appendChild(ta);
+    outer.appendChild(stack);
+
+    return outer;
+  }
+
+  function buildGridFromTranslate(payload) {
+    rowsEl.innerHTML = "";
+
+    const refQs = payload?.reference?.questions || [];
+    const destQs = payload?.destination?.questions || [];
+    const destByCode = new Map(destQs.map(q => [q.question_code, q]));
+    let currentCategory = null;
+
+    refQs
+      .slice()
+      .sort((a,b) => (a.question_sequence ?? 0) - (b.question_sequence ?? 0))
+      .forEach((rq, idx) => {
+        const dq = destByCode.get(rq.question_code) || {};
+
+        const catName = rq.question_category_name || `Section ${Math.floor(idx / 3) + 1}`;
+        if (catName !== currentCategory) {
+          currentCategory = catName;
+          const section = document.createElement("div");
+          section.className = "section-row";
+          section.textContent = catName;
+          rowsEl.appendChild(section);
+        }
+
+        // Determine question number (prefer API sequence, fallback to index+1)
+        const qNumber = (rq.question_sequence ?? (idx + 1));
+
+        // ✅ Selection is hard-coded by number
+        const selectedForTranslation = TRANSLATE_QUESTION_NUMBERS.has(qNumber);
+        const disableEdits = !selectedForTranslation;
+
+        const row = document.createElement("div");
+        row.className = "grid row " + (selectedForTranslation ? "selected" : "locked");
+
+        const rAnswers = Array.isArray(rq.answers) ? rq.answers.slice(0, MAX_ANSWERS) : [];
+        const dAnswers = Array.isArray(dq.answers) ? dq.answers.slice(0, MAX_ANSWERS) : [];
+        while (rAnswers.length < MAX_ANSWERS) rAnswers.push({ answer_title: "", is_correct: false });
+        while (dAnswers.length < MAX_ANSWERS) dAnswers.push({ answer_title: "" });
+
+        row.appendChild(
+          makeStackCell({
+            isQuestion: true,
+            qNumber,
+            status: selectedForTranslation ? "translate" : "locked",
+            sourceText: rq.question_text || "",
+            destText: dq.question_text || "",
+            placeholder: selectedForTranslation ? "Translated question" : "Not selected for translation",
+            isCorrect: false,
+            disabled: disableEdits
+          })
+        );
+
+        for (let i = 0; i < MAX_ANSWERS; i++) {
+          row.appendChild(
+            makeStackCell({
+              isQuestion: false,
+              qNumber: null,
+              status: null,
+              sourceText: rAnswers[i].answer_title || "",
+              destText: dAnswers[i].answer_title || "",
+              placeholder: selectedForTranslation ? "Translated response" : "Not selected for translation",
+              isCorrect: !!rAnswers[i].is_correct,
+              disabled: disableEdits
+            })
+          );
+        }
+
+        rowsEl.appendChild(row);
+      });
+  }
+
+  async function loadTranslationTable() {
+    const exam_code = examCodeEl.value;
+    const language_code = destLangEl.value;
+
+    if (!exam_code) return alert("Please select an exam.");
+    if (!language_code) return alert("Please select a destination language.");
+
+    setLoading(true);
+    try {
+      const res = await fetch(ENDPOINTS.testTranslate, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ exam_code, language_code })
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`test_translate HTTP ${res.status} :: ${txt}`);
+      }
+
+      const data = await res.json();
+      if (data.status && data.status !== 200) throw new Error(data.message || `API status ${data.status}`);
+
+      if (data.exam_name) examNameEl.value = data.exam_name;
+
+      buildGridFromTranslate(data);
+
+    } catch (err) {
+      showError("Could not load translation data.", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function demoAction(name) {
+    alert(`${name} (demo only): No endpoint wired yet.`);
+  }
+
+  btnLoad.addEventListener("click", loadTranslationTable);
+  btnSave.addEventListener("click", () => demoAction("Save"));
+  btnSubmit.addEventListener("click", () => demoAction("Submit"));
+  btnPublish.addEventListener("click", () => demoAction("Publish"));
+
+  populateLanguages();
+  loadExamList();
 </script>
 </body>
 </html>
