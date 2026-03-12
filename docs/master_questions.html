@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Master Questions Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #f6f6f6;
+      --card: #ffffff;
+      --border: #dddddd;
+      --muted: #666666;
+      --header: #fafafa;
+      --primary: #005eb8;
+      --primaryHover: #004a92;
+      --danger: #b00020;
+      --dangerHover: #8f0019;
+      --successBg: #e9f8ee;
+      --successBorder: #bfe6c9;
+      --successText: #15552e;
+      --errorBg: #fff2f2;
+      --errorBorder: #f0c8c8;
+      --errorText: #b00020;
+      --shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 24px;
+      background: var(--bg);
+      color: #222;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 1360px;
+      margin: 0 auto;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .subhead {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    button:hover {
+      background: var(--primaryHover);
+    }
+
+    button.secondary {
+      background: #666;
+    }
+
+    button.secondary:hover {
+      background: #555;
+    }
+
+    button.ghost {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid #c9d7ea;
+    }
+
+    button.ghost:hover {
+      background: #f2f7ff;
+    }
+
+    button.danger {
+      background: var(--danger);
+    }
+
+    button.danger:hover {
+      background: var(--dangerHover);
+    }
+
+    button.small {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .message {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      display: none;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .message.success {
+      display: block;
+      background: var(--successBg);
+      border: 1px solid var(--successBorder);
+      color: var(--successText);
+    }
+
+    .message.error {
+      display: block;
+      background: var(--errorBg);
+      border: 1px solid var(--errorBorder);
+      color: var(--errorText);
+    }
+
+    .summary-bar {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .summary-item {
+      font-size: 13px;
+      color: #444;
+    }
+
+    .summary-item strong {
+      color: #222;
+    }
+
+    .category-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--header);
+      border-bottom: 1px solid #e6e6e6;
+      flex-wrap: wrap;
+    }
+
+    .category-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .category-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: #222;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .category-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .category-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .category-body {
+      padding: 14px 16px 16px;
+    }
+
+    .category-body.collapsed {
+      display: none;
+    }
+
+    .empty-category {
+      padding: 14px;
+      border: 1px dashed #d8d8d8;
+      border-radius: 8px;
+      color: #666;
+      background: #fafafa;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .question-card {
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .question-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .question-meta strong {
+      color: #222;
+    }
+
+    .question-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 160px 160px 1fr;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      font-size: 13px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    input,
+    textarea {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      background: #fff;
+      width: 100%;
+    }
+
+    input[readonly] {
+      background: #f7f7f7;
+      color: #444;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      line-height: 1.45;
+    }
+
+    .question-textarea {
+      min-height: 160px;
+    }
+
+    .answer-block {
+      border: 1px solid #ececec;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fafafa;
+    }
+
+    .answer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .correct-choice {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .correct-choice input[type="radio"] {
+      width: auto;
+      margin: 0;
+    }
+
+    .save-note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 10px;
+    }
+
+    .dirty-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #fff6dd;
+      border: 1px solid #f3dfa4;
+      color: #6a5200;
+    }
+
+    @media (max-width: 920px) {
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+
+      body {
+        margin: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Master Questions</h1>
+        <div class="subhead" id="pageSubhead">Loading exam…</div>
+      </div>
+
+      <div class="top-actions">
+        <button class="ghost" id="collapseAllBtn" type="button">Collapse all</button>
+        <button class="ghost" id="expandAllBtn" type="button">Expand all</button>
+        <button class="ghost" id="backBtn" type="button">Back</button>
+        <button class="secondary" id="reloadBtn" type="button">Reload</button>
+      </div>
+    </div>
+
+    <div id="pageMessage" class="message"></div>
+
+    <div class="summary-bar">
+      <div class="summary-item"><strong>Exam ID:</strong> <span id="summaryExamId">—</span></div>
+      <div class="summary-item"><strong>Exam title:</strong> <span id="summaryExamTitle">—</span></div>
+      <div class="summary-item"><strong>Total questions:</strong> <span id="summaryQuestionCount">0</span></div>
+      <div class="summary-item"><strong>Unsaved changes:</strong> <span id="summaryDirty">No</span></div>
+    </div>
+
+    <div id="categoriesContainer"></div>
+  </div>
+
+  <script>
+    const API_TOKEN = "9f98ef3719fa6645943f8056f2b3a2c4dd8e7f20c92ccb83babfcd74a029104f";
+    const API_BASE = "https://apim.workato.com/213564_daikinj/exam_management-v10";
+
+    function qs(id) {
+      return document.getElementById(id);
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showPageMessage(type, text) {
+      const box = qs("pageMessage");
+      box.className = "message " + type;
+      box.textContent = text;
+    }
+
+    function clearPageMessage() {
+      const box = qs("pageMessage");
+      box.className = "message";
+      box.textContent = "";
+    }
+
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        exam_id: params.get("exam_id") || "",
+        user_id: params.get("user_id") || "",
+        username: params.get("username") || "",
+        auth_code: params.get("auth_code") || "",
+        hash: params.get("hash") || "",
+        iframe_src: params.get("iframe_src") || window.location.href
+      };
+    }
+
+    const urlParams = getUrlParams();
+    let pageData = null;
+    let hasUnsavedChanges = false;
+
+    function markDirty() {
+      hasUnsavedChanges = true;
+      updateSummary();
+    }
+
+    function clearDirty() {
+      hasUnsavedChanges = false;
+      updateSummary();
+    }
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Api-token": API_TOKEN
+      };
+    }
+
+    function buildAuthPayload(formSubtype) {
+      return {
+        request: {
+          form_type: "exam_admin",
+          form_subtype: formSubtype,
+          iframe_params: {
+            user_id: urlParams.user_id,
+            username: urlParams.username,
+            auth_code: urlParams.auth_code,
+            hash: urlParams.hash,
+            iframe_src: urlParams.iframe_src
+          }
+        }
+      };
+    }
+
+    function getLoadEndpoint(examId) {
+      return API_BASE + "/exams/" + encodeURIComponent(examId) + "/master-questions/get";
+    }
+
+    function getSaveEndpoint(examId) {
+      return API_BASE + "/exams/" + encodeURIComponent(examId) + "/master-questions/save";
+    }
+
+    function normaliseQuestion(question) {
+      return {
+        q_no: question.q_no || "",
+        category_code: question.category_code || "",
+        seq_in_category: question.seq_in_category || "",
+        question_text: question.question_text || "",
+        answer_1: question.answer_1 || "",
+        answer_2: question.answer_2 || "",
+        answer_3: question.answer_3 || "",
+        answer_4: question.answer_4 || "",
+        correct_option: question.correct_option || "",
+        _deleted: false
+      };
+    }
+
+    function sortCategories(categories) {
+      return categories.slice().sort(function(a, b) {
+        return (parseInt(a.sort_order, 10) || 0) - (parseInt(b.sort_order, 10) || 0);
+      });
+    }
+
+    function sortQuestions(questions) {
+      return questions.slice().sort(function(a, b) {
+        const aSeq = parseInt(a.seq_in_category, 10) || 0;
+        const bSeq = parseInt(b.seq_in_category, 10) || 0;
+        if (aSeq !== bSeq) return aSeq - bSeq;
+
+        const aQ = parseInt(a.q_no, 10) || 0;
+        const bQ = parseInt(b.q_no, 10) || 0;
+        return aQ - bQ;
+      });
+    }
+
+    function getNextQNo() {
+      let maxQNo = 0;
+      (pageData.categories || []).forEach(function(category) {
+        (category.questions || []).forEach(function(question) {
+          if (!question._deleted) {
+            const qNo = parseInt(question.q_no, 10);
+            if (!isNaN(qNo) && qNo > maxQNo) maxQNo = qNo;
+          }
+        });
+      });
+      return maxQNo + 1;
+    }
+
+    function getNextSeqInCategory(category) {
+      let maxSeq = 0;
+      (category.questions || []).forEach(function(question) {
+        if (!question._deleted) {
+          const seq = parseInt(question.seq_in_category, 10);
+          if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+        }
+      });
+      return maxSeq + 1;
+    }
+
+    function updateSummary() {
+      if (!pageData) return;
+
+      qs("summaryExamId").textContent = pageData.exam_id || "—";
+      qs("summaryExamTitle").textContent = pageData.exam_title || "—";
+
+      let count = 0;
+      (pageData.categories || []).forEach(function(category) {
+        (category.questions || []).forEach(function(question) {
+          if (!question._deleted) count += 1;
+        });
+      });
+
+      qs("summaryQuestionCount").textContent = String(count);
+      qs("summaryDirty").textContent = hasUnsavedChanges ? "Yes" : "No";
+
+      qs("pageTitle").textContent = "Master Questions";
+      qs("pageSubhead").textContent = (pageData.exam_title || "") + " (" + (pageData.exam_id || "") + ")";
+    }
+
+    function updateCategoryHeader(categoryIndex) {
+      const category = pageData.categories[categoryIndex];
+      const badgeEl = document.querySelector('[data-category-dirty-badge="' + categoryIndex + '"]');
+      const metaEl = document.querySelector('[data-category-meta="' + categoryIndex + '"]');
+
+      if (badgeEl) {
+        badgeEl.innerHTML = category._dirty ? '<span class="dirty-pill">Unsaved</span>' : "";
+      }
+
+      if (metaEl) {
+        const visibleCount = (category.questions || []).filter(function(q) { return !q._deleted; }).length;
+        metaEl.textContent = "Code: " + (category.category_code || "") + " • Questions: " + visibleCount;
+      }
+    }
+
+    function updateQuestionMeta(categoryIndex, questionIndex) {
+      const category = pageData.categories[categoryIndex];
+      const question = category.questions[questionIndex];
+      const card = document.querySelector('[data-question-card="' + categoryIndex + '_' + questionIndex + '"]');
+      if (!card) return;
+
+      const qNoEl = card.querySelector('[data-qno-display]');
+      const seqEl = card.querySelector('[data-seq-display]');
+      if (qNoEl) qNoEl.textContent = String(question.q_no);
+      if (seqEl) seqEl.textContent = String(question.seq_in_category);
+    }
+
+    function renderPage() {
+      updateSummary();
+
+      const container = qs("categoriesContainer");
+      const categories = sortCategories(pageData.categories || []);
+
+      container.innerHTML = categories.map(function(category, categoryIndex) {
+        const questions = sortQuestions(category.questions || []);
+        const visibleQuestions = questions.filter(function(q) { return !q._deleted; });
+
+        return `
+          <div class="category-card">
+            <div class="category-header">
+              <div class="category-heading">
+                <div class="category-title">
+                  ${escapeHtml(category.category_label || category.category_code)}
+                  <span data-category-dirty-badge="${categoryIndex}">
+                    ${category._dirty ? '<span class="dirty-pill">Unsaved</span>' : ""}
+                  </span>
+                </div>
+                <div class="category-meta" data-category-meta="${categoryIndex}">
+                  Code: ${escapeHtml(category.category_code || "")} • Questions: ${visibleQuestions.length}
+                </div>
+              </div>
+
+              <div class="category-actions">
+                <button type="button" class="small toggle-category-btn" data-category-index="${categoryIndex}">
+                  ${category._collapsed ? "Expand" : "Collapse"}
+                </button>
+                <button type="button" class="small add-question-btn" data-category-index="${categoryIndex}">
+                  Add question
+                </button>
+                <button type="button" class="small save-category-btn" data-category-index="${categoryIndex}">
+                  Save category
+                </button>
+              </div>
+            </div>
+
+            <div class="category-body ${category._collapsed ? "collapsed" : ""}">
+              ${
+                visibleQuestions.length === 0
+                  ? `<div class="empty-category">No questions yet in this category.</div>`
+                  : ""
+              }
+
+              ${questions.map(function(question, questionIndex) {
+                if (question._deleted) return "";
+
+                const radioName = "correct_" + categoryIndex + "_" + questionIndex;
+
+                return `
+                  <div class="question-card" data-question-card="${categoryIndex}_${questionIndex}">
+                    <div class="question-header">
+                      <div class="question-meta">
+                        <span><strong>Q no:</strong> <span data-qno-display>${escapeHtml(question.q_no)}</span></span>
+                        <span><strong>Seq:</strong> <span data-seq-display>${escapeHtml(question.seq_in_category)}</span></span>
+                      </div>
+
+                      <div class="question-actions">
+                        <button type="button" class="small move-up-btn" data-category-index="${categoryIndex}" data-question-index="${questionIndex}">Up</button>
+                        <button type="button" class="small move-down-btn" data-category-index="${categoryIndex}" data-question-index="${questionIndex}">Down</button>
+                        <button type="button" class="small danger delete-question-btn" data-category-index="${categoryIndex}" data-question-index="${questionIndex}">Delete</button>
+                      </div>
+                    </div>
+
+                    <div class="field-row">
+                      <div class="field">
+                        <label>Q no</label>
+                        <input type="number" value="${escapeHtml(question.q_no)}" readonly />
+                      </div>
+
+                      <div class="field">
+                        <label>Sequence in category</label>
+                        <input
+                          type="number"
+                          class="seq-input"
+                          data-category-index="${categoryIndex}"
+                          data-question-index="${questionIndex}"
+                          value="${escapeHtml(question.seq_in_category)}"
+                        />
+                      </div>
+
+                      <div></div>
+                    </div>
+
+                    <div class="stack">
+                      <div class="field">
+                        <label>Question text</label>
+                        <textarea
+                          class="question-text-input question-textarea"
+                          data-category-index="${categoryIndex}"
+                          data-question-index="${questionIndex}"
+                        >${escapeHtml(question.question_text)}</textarea>
+                      </div>
+
+                      ${[1, 2, 3, 4].map(function(answerNo) {
+                        const answerKey = "answer_" + answerNo;
+                        const checked = String(question.correct_option) === String(answerNo) ? "checked" : "";
+
+                        return `
+                          <div class="answer-block">
+                            <div class="answer-header">
+                              <span>Answer ${answerNo}</span>
+                              <label class="correct-choice">
+                                <input
+                                  type="radio"
+                                  name="${radioName}"
+                                  value="${answerNo}"
+                                  ${checked}
+                                  class="correct-option-input"
+                                  data-category-index="${categoryIndex}"
+                                  data-question-index="${questionIndex}"
+                                />
+                                Correct
+                              </label>
+                            </div>
+
+                            <textarea
+                              class="answer-input"
+                              data-answer-key="${answerKey}"
+                              data-category-index="${categoryIndex}"
+                              data-question-index="${questionIndex}"
+                            >${escapeHtml(question[answerKey])}</textarea>
+                          </div>
+                        `;
+                      }).join("")}
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+
+              <div class="save-note">Saving updates only this category.</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      bindEditorEvents();
+    }
+
+    function bindEditorEvents() {
+      document.querySelectorAll(".seq-input").forEach(function(input) {
+        input.addEventListener("input", function() {
+          const categoryIndex = parseInt(input.getAttribute("data-category-index"), 10);
+          const questionIndex = parseInt(input.getAttribute("data-question-index"), 10);
+
+          pageData.categories[categoryIndex].questions[questionIndex].seq_in_category = input.value;
+          pageData.categories[categoryIndex]._dirty = true;
+          markDirty();
+          updateSummary();
+          updateCategoryHeader(categoryIndex);
+          updateQuestionMeta(categoryIndex, questionIndex);
+        });
+      });
+
+      document.querySelectorAll(".question-text-input").forEach(function(input) {
+        input.addEventListener("input", function() {
+          const categoryIndex = parseInt(input.getAttribute("data-category-index"), 10);
+          const questionIndex = parseInt(input.getAttribute("data-question-index"), 10);
+
+          pageData.categories[categoryIndex].questions[questionIndex].question_text = input.value;
+          pageData.categories[categoryIndex]._dirty = true;
+          markDirty();
+          updateSummary();
+          updateCategoryHeader(categoryIndex);
+        });
+      });
+
+      document.querySelectorAll(".answer-input").forEach(function(input) {
+        input.addEventListener("input", function() {
+          const categoryIndex = parseInt(input.getAttribute("data-category-index"), 10);
+          const questionIndex = parseInt(input.getAttribute("data-question-index"), 10);
+          const answerKey = input.getAttribute("data-answer-key");
+
+          pageData.categories[categoryIndex].questions[questionIndex][answerKey] = input.value;
+          pageData.categories[categoryIndex]._dirty = true;
+          markDirty();
+          updateSummary();
+          updateCategoryHeader(categoryIndex);
+        });
+      });
+
+      document.querySelectorAll(".correct-option-input").forEach(function(input) {
+        input.addEventListener("change", function() {
+          const categoryIndex = parseInt(input.getAttribute("data-category-index"), 10);
+          const questionIndex = parseInt(input.getAttribute("data-question-index"), 10);
+
+          pageData.categories[categoryIndex].questions[questionIndex].correct_option = parseInt(input.value, 10);
+          pageData.categories[categoryIndex]._dirty = true;
+          markDirty();
+          updateSummary();
+          updateCategoryHeader(categoryIndex);
+        });
+      });
+
+      document.querySelectorAll(".add-question-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          addQuestion(parseInt(btn.getAttribute("data-category-index"), 10));
+        });
+      });
+
+      document.querySelectorAll(".save-category-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          saveCategory(parseInt(btn.getAttribute("data-category-index"), 10));
+        });
+      });
+
+      document.querySelectorAll(".delete-question-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          deleteQuestion(
+            parseInt(btn.getAttribute("data-category-index"), 10),
+            parseInt(btn.getAttribute("data-question-index"), 10)
+          );
+        });
+      });
+
+      document.querySelectorAll(".move-up-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          moveQuestion(
+            parseInt(btn.getAttribute("data-category-index"), 10),
+            parseInt(btn.getAttribute("data-question-index"), 10),
+            -1
+          );
+        });
+      });
+
+      document.querySelectorAll(".move-down-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          moveQuestion(
+            parseInt(btn.getAttribute("data-category-index"), 10),
+            parseInt(btn.getAttribute("data-question-index"), 10),
+            1
+          );
+        });
+      });
+
+      document.querySelectorAll(".toggle-category-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          const categoryIndex = parseInt(btn.getAttribute("data-category-index"), 10);
+          pageData.categories[categoryIndex]._collapsed = !pageData.categories[categoryIndex]._collapsed;
+          renderPage();
+        });
+      });
+    }
+
+    function addQuestion(categoryIndex) {
+      const category = pageData.categories[categoryIndex];
+
+      category.questions.push({
+        q_no: getNextQNo(),
+        category_code: category.category_code,
+        seq_in_category: getNextSeqInCategory(category),
+        question_text: "",
+        answer_1: "",
+        answer_2: "",
+        answer_3: "",
+        answer_4: "",
+        correct_option: 1,
+        _deleted: false
+      });
+
+      category._dirty = true;
+      markDirty();
+      renderPage();
+    }
+
+    function deleteQuestion(categoryIndex, questionIndex) {
+      const confirmed = confirm("Delete this question from the category?");
+      if (!confirmed) return;
+
+      pageData.categories[categoryIndex].questions[questionIndex]._deleted = true;
+      pageData.categories[categoryIndex]._dirty = true;
+      markDirty();
+      renderPage();
+    }
+
+    function moveQuestion(categoryIndex, questionIndex, direction) {
+      const category = pageData.categories[categoryIndex];
+      const visibleQuestions = sortQuestions((category.questions || []).filter(function(q) { return !q._deleted; }));
+      const actualQuestion = category.questions[questionIndex];
+      const currentVisibleIndex = visibleQuestions.indexOf(actualQuestion);
+
+      if (currentVisibleIndex === -1) return;
+
+      const targetVisibleIndex = currentVisibleIndex + direction;
+      if (targetVisibleIndex < 0 || targetVisibleIndex >= visibleQuestions.length) return;
+
+      const currentQuestion = visibleQuestions[currentVisibleIndex];
+      const targetQuestion = visibleQuestions[targetVisibleIndex];
+
+      const currentSeq = currentQuestion.seq_in_category;
+      currentQuestion.seq_in_category = targetQuestion.seq_in_category;
+      targetQuestion.seq_in_category = currentSeq;
+
+      category._dirty = true;
+      markDirty();
+      renderPage();
+    }
+
+    function validateCategory(category) {
+      const activeQuestions = sortQuestions((category.questions || []).filter(function(q) { return !q._deleted; }));
+
+      for (let i = 0; i < activeQuestions.length; i += 1) {
+        const question = activeQuestions[i];
+
+        if (!String(question.q_no).trim()) return "Every question must have a q number.";
+        if (!String(question.seq_in_category).trim()) return "Every question must have a sequence in category.";
+        if (!String(question.question_text).trim()) return "Every question must have question text.";
+
+        if (
+          !String(question.answer_1).trim() ||
+          !String(question.answer_2).trim() ||
+          !String(question.answer_3).trim() ||
+          !String(question.answer_4).trim()
+        ) {
+          return "All four answers are required for every question.";
+        }
+
+        const correct = parseInt(question.correct_option, 10);
+        if (![1, 2, 3, 4].includes(correct)) {
+          return "Every question must have a correct option from 1 to 4.";
+        }
+      }
+
+      return "";
+    }
+
+    async function saveCategory(categoryIndex) {
+      const category = pageData.categories[categoryIndex];
+      const validationError = validateCategory(category);
+
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
+
+      const payload = {
+        request: {
+          form_type: "exam_admin",
+          form_subtype: "save_master_questions",
+          iframe_params: {
+            user_id: urlParams.user_id,
+            username: urlParams.username,
+            auth_code: urlParams.auth_code,
+            hash: urlParams.hash,
+            iframe_src: urlParams.iframe_src
+          },
+          form_details: {
+            category_code: category.category_code,
+            questions: sortQuestions((category.questions || []).filter(function(question) {
+              return !question._deleted;
+            })).map(function(question) {
+              return {
+                q_no: parseInt(question.q_no, 10),
+                seq_in_category: parseInt(question.seq_in_category, 10),
+                question_text: question.question_text,
+                answer_1: question.answer_1,
+                answer_2: question.answer_2,
+                answer_3: question.answer_3,
+                answer_4: question.answer_4,
+                correct_option: parseInt(question.correct_option, 10)
+              };
+            })
+          }
+        }
+      };
+
+      try {
+        const response = await fetch(getSaveEndpoint(urlParams.exam_id), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+          showPageMessage(
+            "success",
+            "Category saved: " + category.category_code +
+            "\nSaved count: " + ((result.data && result.data.saved_count) || 0)
+          );
+          await loadMasterQuestions();
+        } else {
+          showPageMessage("error", result.message || "Error saving category");
+        }
+      } catch (err) {
+        showPageMessage("error", "API error while saving category");
+        console.error(err);
+      }
+    }
+
+    async function loadMasterQuestions() {
+      if (!urlParams.exam_id) {
+        showPageMessage("error", "No exam_id was supplied in the page URL.");
+        return;
+      }
+
+      try {
+        clearPageMessage();
+
+        const payload = buildAuthPayload("get_master_questions");
+
+        const response = await fetch(getLoadEndpoint(urlParams.exam_id), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== "success") {
+          showPageMessage("error", result.message || "Could not load master questions");
+          return;
+        }
+
+        pageData = {
+          exam_id: result.data.exam_id || "",
+          exam_title: result.data.exam_title || "",
+          question_count: result.data.question_count || 0,
+          categories: (result.data.categories || []).map(function(category) {
+
+  const hasQuestions = (category.questions || []).length > 0;
+
+        return {
+          category_code: category.category_code || "",
+          category_label: category.category_label || category.category_code || "",
+          sort_order: category.sort_order || 0,
+          _collapsed: !hasQuestions,
+          _dirty: false,
+          questions: (category.questions || []).map(normaliseQuestion)
+        };
+
+})
+        };
+
+        clearDirty();
+        renderPage();
+      } catch (err) {
+        showPageMessage("error", "Error loading master questions");
+        console.error(err);
+      }
+    }
+
+    window.addEventListener("beforeunload", function(e) {
+      if (!hasUnsavedChanges) return;
+      e.preventDefault();
+      e.returnValue = "";
+    });
+
+    qs("reloadBtn").addEventListener("click", function() {
+      if (hasUnsavedChanges) {
+        const proceed = confirm("You have unsaved changes. Reload anyway?");
+        if (!proceed) return;
+      }
+      loadMasterQuestions();
+    });
+
+    qs("backBtn").addEventListener("click", function() {
+      if (hasUnsavedChanges) {
+        const proceed = confirm("You have unsaved changes. Leave this page anyway?");
+        if (!proceed) return;
+      }
+      window.history.back();
+    });
+
+    qs("collapseAllBtn").addEventListener("click", function() {
+      if (!pageData) return;
+      pageData.categories.forEach(function(category) {
+        category._collapsed = true;
+      });
+      renderPage();
+    });
+
+    qs("expandAllBtn").addEventListener("click", function() {
+      if (!pageData) return;
+      pageData.categories.forEach(function(category) {
+        category._collapsed = false;
+      });
+      renderPage();
+    });
+
+    loadMasterQuestions();
+  </script>
+</body>
+</html>
