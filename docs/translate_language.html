@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Translation Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #f6f6f6;
+      --card: #ffffff;
+      --border: #dddddd;
+      --muted: #666666;
+      --header: #fafafa;
+      --primary: #005eb8;
+      --primaryHover: #004a92;
+      --successBg: #e9f8ee;
+      --successBorder: #bfe6c9;
+      --successText: #15552e;
+      --errorBg: #fff2f2;
+      --errorBorder: #f0c8c8;
+      --errorText: #b00020;
+      --warningBg: #fff6dd;
+      --warningBorder: #f3dfa4;
+      --warningText: #6a5200;
+      --shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 24px;
+      background: var(--bg);
+      color: #222;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 1450px;
+      margin: 0 auto;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .subhead {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .selector-bar {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr auto;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      align-items: end;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 13px;
+      color: #555;
+      font-weight: 700;
+    }
+
+    select,
+    textarea {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      background: #fff;
+      width: 100%;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.45;
+    }
+
+    textarea[readonly] {
+      background: #f7f7f7;
+      color: #444;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    button:hover {
+      background: var(--primaryHover);
+    }
+
+    button.secondary {
+      background: #666;
+    }
+
+    button.secondary:hover {
+      background: #555;
+    }
+
+    button.ghost {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid #c9d7ea;
+    }
+
+    button.ghost:hover {
+      background: #f2f7ff;
+    }
+
+    button.small {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .message {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      display: none;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .message.success {
+      display: block;
+      background: var(--successBg);
+      border: 1px solid var(--successBorder);
+      color: var(--successText);
+    }
+
+    .message.error {
+      display: block;
+      background: var(--errorBg);
+      border: 1px solid var(--errorBorder);
+      color: var(--errorText);
+    }
+
+    .summary-bar {
+      display: none;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .summary-bar.visible {
+      display: flex;
+    }
+
+    .summary-item {
+      font-size: 13px;
+      color: #444;
+    }
+
+    .summary-item strong {
+      color: #222;
+    }
+
+    .dirty-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--warningBg);
+      border: 1px solid var(--warningBorder);
+      color: var(--warningText);
+    }
+
+    .category-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--header);
+      border-bottom: 1px solid #e6e6e6;
+      flex-wrap: wrap;
+    }
+
+    .category-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .category-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: #222;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .category-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .category-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .category-body {
+      padding: 14px 16px 16px;
+    }
+
+    .category-body.collapsed {
+      display: none;
+    }
+
+    .empty-category {
+      padding: 14px;
+      border: 1px dashed #d8d8d8;
+      border-radius: 8px;
+      color: #666;
+      background: #fafafa;
+      font-size: 13px;
+    }
+
+    .question-card {
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .question-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .question-meta strong {
+      color: #222;
+    }
+
+    .question-state {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #f4f4f4;
+      border: 1px solid #ddd;
+      color: #444;
+    }
+
+    .translation-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .panel {
+      border: 1px solid #ececec;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .panel-header {
+      padding: 10px 12px;
+      background: #fafafa;
+      border-bottom: 1px solid #ececec;
+      font-size: 13px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .panel-body {
+      padding: 12px;
+    }
+
+    .field-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .stack-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stack-field label {
+      font-size: 12px;
+      color: #555;
+      font-weight: 700;
+    }
+
+    .locked-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .save-note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 1100px) {
+      .translation-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .selector-bar {
+        grid-template-columns: 1fr;
+      }
+
+      body {
+        margin: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Translation Editor</h1>
+        <div class="subhead" id="pageSubhead">Select an exam and a language to begin.</div>
+      </div>
+
+      <div class="top-actions">
+        <button class="ghost" id="collapseAllBtn" type="button">Collapse all</button>
+        <button class="ghost" id="expandAllBtn" type="button">Expand all</button>
+        <button class="secondary" id="reloadBtn" type="button">Reload</button>
+        <button id="submitBtn" type="button">Submit translation</button>
+      </div>
+    </div>
+
+    <div class="selector-bar">
+      <div class="field">
+        <label for="examSelect">Exam</label>
+        <select id="examSelect">
+          <option value="">Loading exams…</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="languageSelect">Language</label>
+        <select id="languageSelect">
+          <option value="">Loading languages…</option>
+        </select>
+      </div>
+
+      <button id="loadWorkspaceBtn" type="button">Load workspace</button>
+    </div>
+
+    <div id="pageMessage" class="message"></div>
+
+    <div id="summaryBar" class="summary-bar">
+      <div class="summary-item"><strong>Exam ID:</strong> <span id="summaryExamId">—</span></div>
+      <div class="summary-item"><strong>Exam title:</strong> <span id="summaryExamTitle">—</span></div>
+      <div class="summary-item"><strong>Language:</strong> <span id="summaryTranslationLang">—</span></div>
+      <div class="summary-item"><strong>Status:</strong> <span id="summaryLanguageStatus">—</span></div>
+      <div class="summary-item"><strong>Changed questions:</strong> <span id="summaryChangedCount">0</span></div>
+      <div class="summary-item"><strong>Unsaved changes:</strong> <span id="summaryDirty">No</span></div>
+    </div>
+
+    <div id="categoriesContainer"></div>
+  </div>
+
+  <script>
+    const API_TOKEN = "9f98ef3719fa6645943f8056f2b3a2c4dd8e7f20c92ccb83babfcd74a029104f";
+    const API_BASE = "https://apim.workato.com/213564_daikinj/exam_management-v10";
+
+    const GET_TRANSLATION_SUBTYPE = "get_translation_workspace";
+    const SAVE_TRANSLATION_SUBTYPE = "save_translation";
+    const SUBMIT_TRANSLATION_SUBTYPE = "submit_translation";
+
+    function qs(id) {
+      return document.getElementById(id);
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showPageMessage(type, text) {
+      const box = qs("pageMessage");
+      box.className = "message " + type;
+      box.textContent = text;
+    }
+
+    function clearPageMessage() {
+      const box = qs("pageMessage");
+      box.className = "message";
+      box.textContent = "";
+    }
+
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        exam_id: params.get("exam_id") || "",
+        lang_code: params.get("lang_code") || "",
+        user_id: params.get("user_id") || "",
+        username: params.get("username") || "",
+        auth_code: params.get("auth_code") || "",
+        hash: params.get("hash") || "",
+        iframe_src: params.get("iframe_src") || window.location.href
+      };
+    }
+
+    const urlParams = getUrlParams();
+    let pageData = null;
+    let hasUnsavedChanges = false;
+    let examsData = [];
+    let languagesData = [];
+
+    function hasAuthParams() {
+      return !!(
+        urlParams.user_id &&
+        urlParams.username &&
+        urlParams.auth_code &&
+        urlParams.hash &&
+        urlParams.iframe_src
+      );
+    }
+
+    function markDirty() {
+      hasUnsavedChanges = true;
+      updateSummary();
+    }
+
+    function clearDirty() {
+      hasUnsavedChanges = false;
+      updateSummary();
+    }
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Api-token": API_TOKEN
+      };
+    }
+
+    function buildWrappedRequest(formType, formSubtype, formDetails) {
+      const request = {
+        form_type: formType,
+        iframe_params: {
+          user_id: urlParams.user_id,
+          username: urlParams.username,
+          auth_code: urlParams.auth_code,
+          hash: urlParams.hash,
+          iframe_src: urlParams.iframe_src
+        }
+      };
+
+      if (formSubtype) {
+        request.form_subtype = formSubtype;
+      }
+
+      if (formDetails) {
+        request.form_details = formDetails;
+      }
+
+      return { request: request };
+    }
+
+    function buildWorkspaceRequest() {
+      return {
+        form_type: "exam_translation",
+        iframe_params: {
+          user_id: urlParams.user_id,
+          username: urlParams.username,
+          auth_code: urlParams.auth_code,
+          hash: urlParams.hash,
+          iframe_src: urlParams.iframe_src
+        }
+      };
+    }
+
+    function getExamsEndpoint() {
+      return API_BASE + "/exams/get";
+    }
+
+    function getOptionsEndpoint() {
+      return API_BASE + "/exams/options/get";
+    }
+
+    function getWorkspaceEndpoint(examId, langCode) {
+      return API_BASE +
+        "/exams/" + encodeURIComponent(examId) +
+        "/translations/" + encodeURIComponent(langCode) +
+        "/workspace";
+    }
+
+    function getSaveEndpoint(examId, langCode) {
+      return API_BASE +
+        "/exams/" + encodeURIComponent(examId) +
+        "/translations/" + encodeURIComponent(langCode) +
+        "/save";
+    }
+
+    function getSubmitEndpoint(examId, langCode) {
+      return API_BASE +
+        "/exams/" + encodeURIComponent(examId) +
+        "/translations/" + encodeURIComponent(langCode) +
+        "/submit";
+    }
+
+    function sortCategories(categories) {
+      return categories.slice().sort(function(a, b) {
+        return (parseInt(a.sort_order, 10) || 0) - (parseInt(b.sort_order, 10) || 0);
+      });
+    }
+
+    function sortQuestions(questions) {
+      return questions.slice().sort(function(a, b) {
+        const aSeq = parseInt(a.seq_in_category, 10) || 0;
+        const bSeq = parseInt(b.seq_in_category, 10) || 0;
+        if (aSeq !== bSeq) return aSeq - bSeq;
+
+        const aQ = parseInt(a.q_no, 10) || 0;
+        const bQ = parseInt(b.q_no, 10) || 0;
+        return aQ - bQ;
+      });
+    }
+
+    function normaliseQuestion(question, languageStatus) {
+        const status = String(languageStatus || "").toLowerCase();
+        const statusLocksEditing =
+          status === "submitted" ||
+          status === "approved" ||
+          status === "complete";
+
+        return {
+          q_no: question.q_no || "",
+          seq_in_category: question.seq_in_category || "",
+          is_editable: !statusLocksEditing && question.is_editable !== false,
+          master: {
+            question_text: (question.master && question.master.question_text) || "",
+            answer_1: (question.master && question.master.answer_1) || "",
+            answer_2: (question.master && question.master.answer_2) || "",
+            answer_3: (question.master && question.master.answer_3) || "",
+            answer_4: (question.master && question.master.answer_4) || ""
+          },
+          translation: {
+            question_text: (question.translation && question.translation.question_text) || "",
+            answer_1: (question.translation && question.translation.answer_1) || "",
+            answer_2: (question.translation && question.translation.answer_2) || "",
+            answer_3: (question.translation && question.translation.answer_3) || "",
+            answer_4: (question.translation && question.translation.answer_4) || ""
+          }
+        };
+    }
+
+    function populateExamSelect() {
+      const select = qs("examSelect");
+      const selected = urlParams.exam_id || "";
+
+      if (!examsData.length) {
+        select.innerHTML = '<option value="">No exams available</option>';
+        return;
+      }
+
+      select.innerHTML =
+        '<option value="">Select an exam</option>' +
+        examsData.map(function(exam) {
+          const examId = exam.exam_id || "";
+          const selectedAttr = examId === selected ? " selected" : "";
+          const label = (exam.title || examId) + " (" + examId + ")";
+          return '<option value="' + escapeHtml(examId) + '"' + selectedAttr + '>' + escapeHtml(label) + '</option>';
+        }).join("");
+    }
+
+    function populateLanguageSelect() {
+      const select = qs("languageSelect");
+      const selected = urlParams.lang_code || "";
+
+      if (!languagesData.length) {
+        select.innerHTML = '<option value="">No languages available</option>';
+        return;
+      }
+
+      select.innerHTML =
+        '<option value="">Select a language</option>' +
+        languagesData.map(function(lang) {
+          const langCode = lang.value || "";
+          const selectedAttr = langCode === selected ? " selected" : "";
+          const label = (lang.label || langCode) + " (" + langCode + ")";
+          return '<option value="' + escapeHtml(langCode) + '"' + selectedAttr + '>' + escapeHtml(label) + '</option>';
+        }).join("");
+    }
+
+    async function loadExamList() {
+      const payload = buildWrappedRequest("exam_admin", "get_exams");
+
+      const response = await fetch(getExamsEndpoint(), {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.status !== "success") {
+        throw new Error(result.message || "Could not load exams");
+      }
+
+      examsData = (result.data && result.data.exams) ? result.data.exams : [];
+      populateExamSelect();
+    }
+
+    async function loadLanguageList() {
+      const payload = buildWrappedRequest("exam_admin", "get_exam_options");
+
+      const response = await fetch(getOptionsEndpoint(), {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.status !== "success") {
+        throw new Error(result.message || "Could not load languages");
+      }
+
+      languagesData = (result.data && result.data.languages) ? result.data.languages : [];
+      populateLanguageSelect();
+    }
+
+    function updateSummary() {
+      if (!pageData) {
+        qs("summaryBar").classList.remove("visible");
+        return;
+      }
+
+      qs("summaryBar").classList.add("visible");
+      qs("summaryExamId").textContent = pageData.exam.exam_id || "—";
+      qs("summaryExamTitle").textContent = pageData.exam.title || "—";
+      qs("summaryTranslationLang").textContent = pageData.language.lang_code || "—";
+      qs("summaryLanguageStatus").textContent = pageData.language.status || "—";
+      qs("summaryChangedCount").textContent = String(pageData.scope.changed_count || 0);
+      qs("summaryDirty").textContent = hasUnsavedChanges ? "Yes" : "No";
+
+      qs("pageTitle").textContent = "Translation Editor";
+      qs("pageSubhead").textContent =
+        (pageData.exam.title || "") +
+        " (" + (pageData.exam.exam_id || "") + ")";
+    }
+
+    function updateCategoryHeader(categoryIndex) {
+      const category = pageData.categories[categoryIndex];
+      const badgeEl = document.querySelector('[data-category-dirty-badge="' + categoryIndex + '"]');
+      const metaEl = document.querySelector('[data-category-meta="' + categoryIndex + '"]');
+
+      if (badgeEl) {
+        badgeEl.innerHTML = category._dirty ? '<span class="dirty-pill">Unsaved</span>' : "";
+      }
+
+      if (metaEl) {
+        metaEl.textContent = "Code: " + (category.category_code || "") + " • Questions: " + (category.questions || []).length;
+      }
+    }
+
+    function renderPage() {
+      updateSummary();
+
+      const container = qs("categoriesContainer");
+
+      if (!pageData) {
+        container.innerHTML = "";
+        return;
+      }
+
+      const categories = sortCategories(pageData.categories || []);
+
+      container.innerHTML = categories.map(function(category, categoryIndex) {
+        const questions = sortQuestions(category.questions || []);
+
+        return `
+          <div class="category-card">
+            <div class="category-header">
+              <div class="category-heading">
+                <div class="category-title">
+                  ${escapeHtml(category.name || category.category_code)}
+                  <span data-category-dirty-badge="${categoryIndex}">
+                    ${category._dirty ? '<span class="dirty-pill">Unsaved</span>' : ""}
+                  </span>
+                </div>
+                <div class="category-meta" data-category-meta="${categoryIndex}">
+                  Code: ${escapeHtml(category.category_code || "")} • Questions: ${questions.length}
+                </div>
+              </div>
+
+              <div class="category-actions">
+                <button type="button" class="small toggle-category-btn" data-category-index="${categoryIndex}">
+                  ${category._collapsed ? "Expand" : "Collapse"}
+                </button>
+                <button type="button" class="small save-category-btn" data-category-index="${categoryIndex}">
+                  Save category
+                </button>
+              </div>
+            </div>
+
+            <div class="category-body ${category._collapsed ? "collapsed" : ""}">
+              ${
+                questions.length === 0
+                  ? `<div class="empty-category">No questions in this category.</div>`
+                  : ""
+              }
+
+              ${questions.map(function(question, questionIndex) {
+                const locked = !question.is_editable;
+
+                return `
+                  <div class="question-card">
+                    <div class="question-header">
+                      <div class="question-meta">
+                        <span><strong>Q no:</strong> ${escapeHtml(question.q_no)}</span>
+                        <span><strong>Seq:</strong> ${escapeHtml(question.seq_in_category)}</span>
+                        <span class="question-state">${locked ? "locked" : "editable"}</span>
+                      </div>
+                    </div>
+
+                    <div class="translation-grid">
+                      <div class="panel">
+                        <div class="panel-header">Master</div>
+                        <div class="panel-body">
+                          <div class="field-stack">
+                            <div class="stack-field">
+                              <label>Question</label>
+                              <textarea readonly>${escapeHtml(question.master.question_text)}</textarea>
+                            </div>
+
+                            ${[1,2,3,4].map(function(answerNo) {
+                              const key = "answer_" + answerNo;
+                              return `
+                                <div class="stack-field">
+                                  <label>Answer ${answerNo}</label>
+                                  <textarea readonly>${escapeHtml(question.master[key])}</textarea>
+                                </div>
+                              `;
+                            }).join("")}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="panel">
+                        <div class="panel-header">Translation</div>
+                        <div class="panel-body">
+                          <div class="field-stack">
+                            <div class="stack-field">
+                              <label>Question</label>
+                              <textarea
+                                class="translation-input"
+                                data-field="question_text"
+                                data-category-index="${categoryIndex}"
+                                data-question-index="${questionIndex}"
+                                ${locked ? "readonly" : ""}
+                              >${escapeHtml(question.translation.question_text)}</textarea>
+                            </div>
+
+                            ${[1,2,3,4].map(function(answerNo) {
+                              const key = "answer_" + answerNo;
+                              return `
+                                <div class="stack-field">
+                                  <label>Answer ${answerNo}</label>
+                                  <textarea
+                                    class="translation-input"
+                                    data-field="${key}"
+                                    data-category-index="${categoryIndex}"
+                                    data-question-index="${questionIndex}"
+                                    ${locked ? "readonly" : ""}
+                                  >${escapeHtml(question.translation[key])}</textarea>
+                                </div>
+                              `;
+                            }).join("")}
+
+                            ${locked ? '<div class="locked-note">This question is locked and cannot be edited.</div>' : ''}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+
+              <div class="save-note">Saving updates only this category.</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      bindEditorEvents();
+    }
+
+    function bindEditorEvents() {
+      document.querySelectorAll(".translation-input").forEach(function(input) {
+        if (input.hasAttribute("readonly")) return;
+
+        input.addEventListener("input", function() {
+          const categoryIndex = parseInt(input.getAttribute("data-category-index"), 10);
+          const questionIndex = parseInt(input.getAttribute("data-question-index"), 10);
+          const field = input.getAttribute("data-field");
+
+          pageData.categories[categoryIndex].questions[questionIndex].translation[field] = input.value;
+          pageData.categories[categoryIndex]._dirty = true;
+          markDirty();
+          updateSummary();
+          updateCategoryHeader(categoryIndex);
+        });
+      });
+
+      document.querySelectorAll(".save-category-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          saveCategory(parseInt(btn.getAttribute("data-category-index"), 10));
+        });
+      });
+
+      document.querySelectorAll(".toggle-category-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          const categoryIndex = parseInt(btn.getAttribute("data-category-index"), 10);
+          pageData.categories[categoryIndex]._collapsed = !pageData.categories[categoryIndex]._collapsed;
+          renderPage();
+        });
+      });
+    }
+
+    function validateCategory(category) {
+      const editableQuestions = (category.questions || []).filter(function(q) {
+        return q.is_editable !== false;
+      });
+
+      for (let i = 0; i < editableQuestions.length; i += 1) {
+        const q = editableQuestions[i];
+
+        if (!String(q.translation.question_text).trim()) {
+          return "Every editable question in the category must have translated question text.";
+        }
+
+        if (
+          !String(q.translation.answer_1).trim() ||
+          !String(q.translation.answer_2).trim() ||
+          !String(q.translation.answer_3).trim() ||
+          !String(q.translation.answer_4).trim()
+        ) {
+          return "All four translated answers are required for every editable question.";
+        }
+      }
+
+      return "";
+    }
+
+    async function saveCategory(categoryIndex) {
+      const category = pageData.categories[categoryIndex];
+      const validationError = validateCategory(category);
+
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
+
+      const payload = buildWrappedRequest("exam_translation", SAVE_TRANSLATION_SUBTYPE, {
+        category_code: category.category_code,
+        questions: sortQuestions(category.questions || []).map(function(question) {
+          return {
+            q_no: parseInt(question.q_no, 10),
+            question_text: question.translation.question_text,
+            answer_1: question.translation.answer_1,
+            answer_2: question.translation.answer_2,
+            answer_3: question.translation.answer_3,
+            answer_4: question.translation.answer_4
+          };
+        })
+      });
+
+      try {
+        const response = await fetch(getSaveEndpoint(pageData.exam.exam_id, pageData.language.lang_code), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+          const savedCount = result.data && result.data.saved_count ? result.data.saved_count : 0;
+          const savedQNos = result.data && result.data.saved_q_nos ? result.data.saved_q_nos.join(", ") : "";
+          const languageStatus = result.data && result.data.language_status ? result.data.language_status : "";
+
+          showPageMessage(
+            "success",
+            "Category saved: " + category.category_code +
+            "\nSaved count: " + savedCount +
+            (savedQNos ? "\nSaved Q nos: " + savedQNos : "") +
+            (languageStatus ? "\nLanguage status: " + languageStatus : "")
+          );
+
+          await loadTranslationWorkspace(pageData.exam.exam_id, pageData.language.lang_code);
+        } else {
+          showPageMessage("error", result.message || "Error saving translations");
+        }
+      } catch (err) {
+        showPageMessage("error", "API error while saving category");
+        console.error(err);
+      }
+    }
+
+    async function submitTranslation() {
+  if (!pageData) {
+    alert("No translation workspace is loaded.");
+    return;
+  }
+
+  if (hasUnsavedChanges) {
+    const proceed = confirm("You have unsaved changes. Submit anyway?");
+    if (!proceed) return;
+  }
+
+  const confirmed = confirm("Submit this translation for review?");
+  if (!confirmed) return;
+
+  const payload = {
+    form_type: "exam_translation",
+    form_subtype: SUBMIT_TRANSLATION_SUBTYPE,
+    iframe_params: {
+      user_id: urlParams.user_id,
+      username: urlParams.username,
+      auth_code: urlParams.auth_code,
+      hash: urlParams.hash,
+      iframe_src: urlParams.iframe_src
+    }
+  };
+
+  try {
+    const response = await fetch(getSubmitEndpoint(pageData.exam.exam_id, pageData.language.lang_code), {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.status === "success") {
+      showPageMessage("success", result.message || "Translation submitted");
+      await loadTranslationWorkspace(pageData.exam.exam_id, pageData.language.lang_code);
+    } else {
+      showPageMessage("error", result.message || "Error submitting translation");
+    }
+  } catch (err) {
+    showPageMessage("error", "API error while submitting translation");
+    console.error(err);
+  }
+}
+
+    async function loadTranslationWorkspace(examId, langCode) {
+      if (!examId || !langCode) {
+        showPageMessage("error", "Please select both an exam and a language.");
+        return;
+      }
+
+      try {
+        clearPageMessage();
+
+        const payload = buildWorkspaceRequest();
+
+        const response = await fetch(getWorkspaceEndpoint(examId, langCode), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== "success") {
+          showPageMessage("error", result.message || "Could not load translation");
+          return;
+        }
+
+        pageData = {
+          exam: result.data.exam || {},
+          language: result.data.language || { lang_code: langCode },
+          scope: result.data.scope || {},
+          categories: (result.data.categories || []).map(function(category) {
+            return {
+              name: category.name || category.category_code || "",
+              category_code: category.category_code || "",
+              sort_order: category.sort_order || 0,
+              _collapsed: false,
+              _dirty: false,
+              questions: (category.questions || []).map(function(question) {
+                return normaliseQuestion(question, (result.data.language && result.data.language.status) || "");
+            })
+            };
+          })
+        };
+            const languageStatus = String((pageData.language && pageData.language.status) || "").toLowerCase();
+            qs("submitBtn").disabled =
+              languageStatus === "submitted" ||
+              languageStatus === "approved" ||
+              languageStatus === "complete";
+
+        qs("examSelect").value = examId;
+        qs("languageSelect").value = langCode;
+
+        clearDirty();
+        renderPage();
+      } catch (err) {
+        showPageMessage("error", "Error loading translation");
+        console.error(err);
+      }
+    }
+
+    async function initializePage() {
+      try {
+        clearPageMessage();
+
+        if (!hasAuthParams()) {
+          throw new Error("Missing authentication parameters in the URL.");
+        }
+
+        await Promise.all([loadExamList(), loadLanguageList()]);
+
+        if (urlParams.exam_id && urlParams.lang_code) {
+          await loadTranslationWorkspace(urlParams.exam_id, urlParams.lang_code);
+        }
+      } catch (err) {
+        showPageMessage("error", err.message || "Error loading page setup");
+        console.error(err);
+      }
+    }
+
+    window.addEventListener("beforeunload", function(e) {
+      if (!hasUnsavedChanges) return;
+      e.preventDefault();
+      e.returnValue = "";
+    });
+
+    qs("loadWorkspaceBtn").addEventListener("click", function() {
+      const examId = qs("examSelect").value;
+      const langCode = qs("languageSelect").value;
+      loadTranslationWorkspace(examId, langCode);
+    });
+
+    qs("reloadBtn").addEventListener("click", function() {
+      if (!pageData) return;
+
+      if (hasUnsavedChanges) {
+        const proceed = confirm("You have unsaved changes. Reload anyway?");
+        if (!proceed) return;
+      }
+
+      loadTranslationWorkspace(pageData.exam.exam_id, pageData.language.lang_code);
+    });
+
+    qs("submitBtn").addEventListener("click", function() {
+      submitTranslation();
+    });
+
+    qs("collapseAllBtn").addEventListener("click", function() {
+      if (!pageData) return;
+      pageData.categories.forEach(function(category) {
+        category._collapsed = true;
+      });
+      renderPage();
+    });
+
+    qs("expandAllBtn").addEventListener("click", function() {
+      if (!pageData) return;
+      pageData.categories.forEach(function(category) {
+        category._collapsed = false;
+      });
+      renderPage();
+    });
+
+    initializePage();
+  </script>
+</body>
+</html>
