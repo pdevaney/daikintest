@@ -149,12 +149,6 @@
       100% { background: inherit; }
     }
 
-    .muted {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 8px;
-    }
-
     .pill {
       display: inline-block;
       padding: 4px 10px;
@@ -217,12 +211,6 @@
       background: #fff2f2;
       border: 1px solid #f0c8c8;
       color: var(--danger);
-    }
-
-    .actions-cell {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
     }
 
     details.action-menu {
@@ -624,7 +612,7 @@
       "master_questions.html";
 
     const SEND_FOR_TRANSLATION_SUBTYPE = "send_for_translation";
-    const RETURN_TO_DRAFT_SUBTYPE = "return_to_draft";
+    const REVERT_TO_DRAFT_SUBTYPE = "revert_to_draft";
 
     let examOptions = {
       levels: [],
@@ -693,22 +681,42 @@
       };
     }
 
-    function buildAuthPayload(formSubtype) {
-      return {
+    function buildWrappedPayload(formSubtype, formDetails) {
+      const payload = {
         request: {
           form_type: "exam_admin",
           form_subtype: formSubtype,
           iframe_params: iframeParams
         }
       };
+
+      if (formDetails) {
+        payload.request.form_details = formDetails;
+      }
+
+      return payload;
+    }
+
+    function buildFlatPayload(formSubtype, formDetails) {
+      const payload = {
+        form_type: "exam_admin",
+        form_subtype: formSubtype,
+        iframe_params: iframeParams
+      };
+
+      if (formDetails) {
+        payload.form_details = formDetails;
+      }
+
+      return payload;
     }
 
     function getSendForTranslationEndpoint(examCode) {
       return API_BASE + "/exams/" + encodeURIComponent(examCode) + "/send-for-translation";
     }
 
-    function getReturnToDraftEndpoint(examCode) {
-      return API_BASE + "/exams/" + encodeURIComponent(examCode) + "/return-to-draft";
+    function getRevertToDraftEndpoint(examCode) {
+      return API_BASE + "/exams/" + encodeURIComponent(examCode) + "/revert_to_draft";
     }
 
     function setSelectOptions(selectId, items, selectedValue, includeBlankLabel) {
@@ -963,7 +971,7 @@
 
       if (status.indexOf("translation") !== -1) {
         buttons.push(
-          '<button type="button" class="return-to-draft-btn" data-exam-code="' + escapeHtml(examCode) + '">Return to draft</button>'
+          '<button type="button" class="revert-to-draft-btn" data-exam-code="' + escapeHtml(examCode) + '">Revert to draft</button>'
         );
       }
 
@@ -1032,7 +1040,7 @@
       document.querySelectorAll(".edit-questions-btn").forEach(function(btn) {
         btn.addEventListener("click", function() {
           const examCode = btn.getAttribute("data-exam-code");
-          openMasterQuestionsPage(examCode);
+          openMasterQuestionsPage(examCode, exam.status);
           closeAllActionMenus();
         });
       });
@@ -1045,10 +1053,10 @@
         });
       });
 
-      document.querySelectorAll(".return-to-draft-btn").forEach(function(btn) {
+      document.querySelectorAll(".revert-to-draft-btn").forEach(function(btn) {
         btn.addEventListener("click", function() {
           const examCode = btn.getAttribute("data-exam-code");
-          returnToDraft(examCode);
+          revertToDraft(examCode);
           closeAllActionMenus();
         });
       });
@@ -1126,7 +1134,7 @@
       try {
         clearPageMessage();
 
-        const payload = buildAuthPayload("get_exams");
+        const payload = buildWrappedPayload("get_exams");
 
         const response = await fetch(GET_EXAMS_ENDPOINT, {
           method: "POST",
@@ -1153,7 +1161,7 @@
 
     async function loadExamOptions() {
       try {
-        const payload = buildAuthPayload("get_exam_options");
+        const payload = buildWrappedPayload("get_exam_options");
 
         const response = await fetch(GET_EXAM_OPTIONS_ENDPOINT, {
           method: "POST",
@@ -1201,22 +1209,15 @@
         }
       }
 
-      const payload = {
-        request: {
-          form_type: "exam_admin",
-          form_subtype: "create_exam",
-          iframe_params: iframeParams,
-          form_details: {
-            year: parseInt(qs("examYear").value.trim(), 10),
-            level: parseInt(qs("examLevel").value.trim(), 10),
-            pillar: qs("examPillar").value.trim(),
-            title: qs("examTitle").value.trim(),
-            master_lang_code: masterLang,
-            reference_lang_code: referenceLang,
-            languages: getSelectedLanguages()
-          }
-        }
-      };
+      const payload = buildWrappedPayload("create_exam", {
+        year: parseInt(qs("examYear").value.trim(), 10),
+        level: parseInt(qs("examLevel").value.trim(), 10),
+        pillar: qs("examPillar").value.trim(),
+        title: qs("examTitle").value.trim(),
+        master_lang_code: masterLang,
+        reference_lang_code: referenceLang,
+        languages: getSelectedLanguages()
+      });
 
       try {
         const response = await fetch(CREATE_EXAM_ENDPOINT, {
@@ -1281,19 +1282,12 @@
       const endpoint =
         API_BASE + "/exams/" + encodeURIComponent(sourceExamCode) + "/copy";
 
-      const payload = {
-        request: {
-          form_type: "exam_admin",
-          form_subtype: "copy_exam",
-          iframe_params: iframeParams,
-          form_details: {
-            target_year: parseInt(targetYear, 10),
-            title: title,
-            copy_languages: copyLanguages,
-            copy_translations: copyLanguages ? copyTranslations : false
-          }
-        }
-      };
+      const payload = buildWrappedPayload("copy_exam", {
+        target_year: parseInt(targetYear, 10),
+        title: title,
+        copy_languages: copyLanguages,
+        copy_translations: copyLanguages ? copyTranslations : false
+      });
 
       try {
         const response = await fetch(endpoint, {
@@ -1321,7 +1315,7 @@
 
     async function sendForTranslation(examCode) {
       const confirmed = confirm(
-        "Send this exam for translation?\n\nThis will create or refresh the translation scope for the exam."
+        "Send this exam for translation?\n\nThis will calculate the translation scope and move the exam into translation."
       );
 
       if (!confirmed) {
@@ -1332,17 +1326,44 @@
         const response = await fetch(getSendForTranslationEndpoint(examCode), {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify(buildAuthPayload(SEND_FOR_TRANSLATION_SUBTYPE))
+          body: JSON.stringify(buildFlatPayload(SEND_FOR_TRANSLATION_SUBTYPE))
         });
 
         const result = await response.json();
 
         if (response.ok && result.status === "success") {
-          pendingHighlightExamCode = examCode;
-          showPageMessage("success", result.message || ("Exam sent for translation: " + examCode));
+          const returnedExamId = result.data && result.data.exam_id ? result.data.exam_id : examCode;
+          const returnedStatus = result.data && result.data.exam_status ? result.data.exam_status : "in_translation";
+          const totalChanged = result.data && result.data.scope && result.data.scope.total_changed != null
+            ? result.data.scope.total_changed
+            : 0;
+          const changedQNos = result.data && result.data.scope && result.data.scope.changed_q_nos
+            ? result.data.scope.changed_q_nos.join(", ")
+            : "";
+          const languages = result.data && result.data.languages ? result.data.languages : [];
+          const languageSummary = languages.length
+            ? languages.map(function(lang) {
+                return (lang.lang_code || "") + ": " + (lang.status || "");
+              }).join("\n")
+            : "";
+
+          pendingHighlightExamCode = returnedExamId;
+
+          showPageMessage(
+            "success",
+            (result.message || "Exam sent for translation") +
+            "\nExam: " + returnedExamId +
+            "\nStatus: " + returnedStatus +
+            "\nChanged questions: " + totalChanged +
+            (changedQNos ? "\nChanged Q nos: " + changedQNos : "") +
+            (languageSummary ? "\nLanguages:\n" + languageSummary : "")
+          );
+
           await loadExams();
         } else {
-          alert(result.message || "Could not send exam for translation");
+          const errorCode = result.error_code ? "\nError code: " + result.error_code : "";
+          const errorMessage = result.error_message ? "\nError message: " + result.error_message : "";
+          alert((result.message || "Could not send exam for translation") + errorCode + errorMessage);
         }
       } catch (err) {
         alert("API error");
@@ -1350,9 +1371,9 @@
       }
     }
 
-    async function returnToDraft(examCode) {
+    async function revertToDraft(examCode) {
       const confirmed = confirm(
-        "Return this exam to draft?\n\nThis will allow master questions to be edited again."
+        "Revert this exam to draft?\n\nThis will allow master questions to be edited again."
       );
 
       if (!confirmed) {
@@ -1360,20 +1381,32 @@
       }
 
       try {
-        const response = await fetch(getReturnToDraftEndpoint(examCode), {
+        const response = await fetch(getRevertToDraftEndpoint(examCode), {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify(buildAuthPayload(RETURN_TO_DRAFT_SUBTYPE))
+          body: JSON.stringify(buildFlatPayload(REVERT_TO_DRAFT_SUBTYPE))
         });
 
         const result = await response.json();
 
         if (response.ok && result.status === "success") {
-          pendingHighlightExamCode = examCode;
-          showPageMessage("success", result.message || ("Exam returned to draft: " + examCode));
+          const returnedExamId = result.data && result.data.exam_id ? result.data.exam_id : examCode;
+          const returnedStatus = result.data && result.data.exam_status ? result.data.exam_status : "draft";
+
+          pendingHighlightExamCode = returnedExamId;
+
+          showPageMessage(
+            "success",
+            (result.message || "Exam reverted to draft") +
+            "\nExam: " + returnedExamId +
+            "\nStatus: " + returnedStatus
+          );
+
           await loadExams();
         } else {
-          alert(result.message || "Could not return exam to draft");
+          const errorCode = result.error_code ? "\nError code: " + result.error_code : "";
+          const errorMessage = result.error_message ? "\nError message: " + result.error_message : "";
+          alert((result.message || "Could not revert exam to draft") + errorCode + errorMessage);
         }
       } catch (err) {
         alert("API error");
@@ -1381,9 +1414,10 @@
       }
     }
 
-    function openMasterQuestionsPage(examCode) {
+    function openMasterQuestionsPage(examCode, examStatus) {
       const params = new URLSearchParams();
       params.set("exam_id", examCode);
+      params.set("exam_status", examStatus || "");
       params.set("user_id", iframeParams.user_id || "");
       params.set("username", iframeParams.username || "");
       params.set("auth_code", iframeParams.auth_code || "");
