@@ -248,7 +248,7 @@
       position: absolute;
       right: 0;
       top: calc(100% + 6px);
-      min-width: 170px;
+      min-width: 220px;
       background: #fff;
       border: 1px solid #ddd;
       border-radius: 8px;
@@ -623,6 +623,9 @@
     const MASTER_QUESTIONS_PAGE =
       "master_questions.html";
 
+    const SEND_FOR_TRANSLATION_SUBTYPE = "send_for_translation";
+    const RETURN_TO_DRAFT_SUBTYPE = "return_to_draft";
+
     let examOptions = {
       levels: [],
       pillars: [],
@@ -698,6 +701,14 @@
           iframe_params: iframeParams
         }
       };
+    }
+
+    function getSendForTranslationEndpoint(examCode) {
+      return API_BASE + "/exams/" + encodeURIComponent(examCode) + "/send-for-translation";
+    }
+
+    function getReturnToDraftEndpoint(examCode) {
+      return API_BASE + "/exams/" + encodeURIComponent(examCode) + "/return-to-draft";
     }
 
     function setSelectOptions(selectId, items, selectedValue, includeBlankLabel) {
@@ -932,6 +943,33 @@
       return "pill-default";
     }
 
+    function getActionButtonsHtml(exam) {
+      const examCode = exam.exam_id || "";
+      const status = String(exam.status || "").toLowerCase();
+      const buttons = [];
+
+      buttons.push(
+        '<button type="button" class="copy-btn" data-exam-code="' + escapeHtml(examCode) + '">Copy</button>'
+      );
+
+      if (status.indexOf("draft") !== -1) {
+        buttons.push(
+          '<button type="button" class="edit-questions-btn" data-exam-code="' + escapeHtml(examCode) + '">Edit questions</button>'
+        );
+        buttons.push(
+          '<button type="button" class="send-for-translation-btn" data-exam-code="' + escapeHtml(examCode) + '">Send for translation</button>'
+        );
+      }
+
+      if (status.indexOf("translation") !== -1) {
+        buttons.push(
+          '<button type="button" class="return-to-draft-btn" data-exam-code="' + escapeHtml(examCode) + '">Return to draft</button>'
+        );
+      }
+
+      return buttons.join("");
+    }
+
     function renderExamsTable(exams) {
       const tbody = qs("examsBody");
 
@@ -970,8 +1008,7 @@
               <details class="action-menu">
                 <summary>Actions</summary>
                 <div class="action-menu-box">
-                  <button type="button" class="copy-btn" data-exam-code="${escapeHtml(examCode)}">Copy</button>
-                  <button type="button" class="edit-questions-btn" data-exam-code="${escapeHtml(examCode)}">Edit questions</button>
+                  ${getActionButtonsHtml(exam)}
                 </div>
               </details>
             </td>
@@ -979,8 +1016,7 @@
         `;
       }).join("");
 
-      const copyButtons = document.querySelectorAll(".copy-btn");
-      Array.prototype.forEach.call(copyButtons, function(btn) {
+      document.querySelectorAll(".copy-btn").forEach(function(btn) {
         btn.addEventListener("click", function() {
           const examCode = btn.getAttribute("data-exam-code");
           const exam = currentExams.find(function(item) {
@@ -993,11 +1029,26 @@
         });
       });
 
-      const editButtons = document.querySelectorAll(".edit-questions-btn");
-      Array.prototype.forEach.call(editButtons, function(btn) {
+      document.querySelectorAll(".edit-questions-btn").forEach(function(btn) {
         btn.addEventListener("click", function() {
           const examCode = btn.getAttribute("data-exam-code");
           openMasterQuestionsPage(examCode);
+          closeAllActionMenus();
+        });
+      });
+
+      document.querySelectorAll(".send-for-translation-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          const examCode = btn.getAttribute("data-exam-code");
+          sendForTranslation(examCode);
+          closeAllActionMenus();
+        });
+      });
+
+      document.querySelectorAll(".return-to-draft-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          const examCode = btn.getAttribute("data-exam-code");
+          returnToDraft(examCode);
           closeAllActionMenus();
         });
       });
@@ -1261,6 +1312,68 @@
           await loadExams();
         } else {
           alert(result.message || "Error copying exam");
+        }
+      } catch (err) {
+        alert("API error");
+        console.error(err);
+      }
+    }
+
+    async function sendForTranslation(examCode) {
+      const confirmed = confirm(
+        "Send this exam for translation?\n\nThis will create or refresh the translation scope for the exam."
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        const response = await fetch(getSendForTranslationEndpoint(examCode), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(buildAuthPayload(SEND_FOR_TRANSLATION_SUBTYPE))
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+          pendingHighlightExamCode = examCode;
+          showPageMessage("success", result.message || ("Exam sent for translation: " + examCode));
+          await loadExams();
+        } else {
+          alert(result.message || "Could not send exam for translation");
+        }
+      } catch (err) {
+        alert("API error");
+        console.error(err);
+      }
+    }
+
+    async function returnToDraft(examCode) {
+      const confirmed = confirm(
+        "Return this exam to draft?\n\nThis will allow master questions to be edited again."
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        const response = await fetch(getReturnToDraftEndpoint(examCode), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(buildAuthPayload(RETURN_TO_DRAFT_SUBTYPE))
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+          pendingHighlightExamCode = examCode;
+          showPageMessage("success", result.message || ("Exam returned to draft: " + examCode));
+          await loadExams();
+        } else {
+          alert(result.message || "Could not return exam to draft");
         }
       } catch (err) {
         alert("API error");
