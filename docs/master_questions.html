@@ -22,6 +22,9 @@
       --errorBg: #fff2f2;
       --errorBorder: #f0c8c8;
       --errorText: #b00020;
+      --warningBg: #fff6dd;
+      --warningBorder: #f3dfa4;
+      --warningText: #6a5200;
       --shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
 
@@ -112,6 +115,11 @@
       font-size: 12px;
     }
 
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
     .message {
       margin-bottom: 14px;
       padding: 10px 12px;
@@ -134,6 +142,22 @@
       background: var(--errorBg);
       border: 1px solid var(--errorBorder);
       color: var(--errorText);
+    }
+
+    .readonly-banner {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: var(--warningBg);
+      border: 1px solid var(--warningBorder);
+      color: var(--warningText);
+      font-size: 13px;
+      line-height: 1.4;
+      display: none;
+    }
+
+    .readonly-banner.visible {
+      display: block;
     }
 
     .summary-bar {
@@ -230,6 +254,10 @@
       background: #fff;
     }
 
+    .question-card.readonly-question-card {
+      background: #fcfcfc;
+    }
+
     .question-header {
       display: flex;
       justify-content: space-between;
@@ -295,7 +323,8 @@
       width: 100%;
     }
 
-    input[readonly] {
+    input[readonly],
+    textarea[readonly] {
       background: #f7f7f7;
       color: #444;
     }
@@ -389,6 +418,10 @@
 
     <div id="pageMessage" class="message"></div>
 
+    <div id="readonlyBanner" class="readonly-banner">
+      This exam is not in draft status. Master questions are view-only. Revert the exam to draft to make changes.
+    </div>
+
     <div class="summary-bar">
       <div class="summary-item"><strong>Exam ID:</strong> <span id="summaryExamId">—</span></div>
       <div class="summary-item"><strong>Exam title:</strong> <span id="summaryExamTitle">—</span></div>
@@ -402,7 +435,6 @@
   <script>
     const API_TOKEN = "9f98ef3719fa6645943f8056f2b3a2c4dd8e7f20c92ccb83babfcd74a029104f";
     const API_BASE = "https://apim.workato.com/213564_daikinj/exam_management-v10";
-    const MASTER_QUESTIONS_PAGE = "https://pdevaney.github.io/daikintest/master_questions.html";
 
     function qs(id) {
       return document.getElementById(id);
@@ -413,7 +445,7 @@
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
+        .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#039;");
     }
 
@@ -433,6 +465,7 @@
       const params = new URLSearchParams(window.location.search);
       return {
         exam_id: params.get("exam_id") || "",
+        exam_status: params.get("exam_status") || "",
         user_id: params.get("user_id") || "",
         username: params.get("username") || "",
         auth_code: params.get("auth_code") || "",
@@ -444,6 +477,7 @@
     const urlParams = getUrlParams();
     let pageData = null;
     let hasUnsavedChanges = false;
+    let isReadOnly = false;
 
     function markDirty() {
       hasUnsavedChanges = true;
@@ -561,6 +595,11 @@
 
       qs("pageTitle").textContent = "Master Questions";
       qs("pageSubhead").textContent = (pageData.exam_title || "") + " (" + (pageData.exam_id || "") + ")";
+
+      const readonlyBanner = qs("readonlyBanner");
+      if (readonlyBanner) {
+        readonlyBanner.classList.toggle("visible", isReadOnly);
+      }
     }
 
     function updateCategoryHeader(categoryIndex) {
@@ -619,12 +658,14 @@
                 <button type="button" class="small toggle-category-btn" data-category-index="${categoryIndex}">
                   ${category._collapsed ? "Expand" : "Collapse"}
                 </button>
-                <button type="button" class="small add-question-btn" data-category-index="${categoryIndex}">
-                  Add question
-                </button>
-                <button type="button" class="small save-category-btn" data-category-index="${categoryIndex}">
-                  Save category
-                </button>
+                ${!isReadOnly ? `
+                  <button type="button" class="small add-question-btn" data-category-index="${categoryIndex}">
+                    Add question
+                  </button>
+                  <button type="button" class="small save-category-btn" data-category-index="${categoryIndex}">
+                    Save category
+                  </button>
+                ` : ""}
               </div>
             </div>
 
@@ -641,7 +682,7 @@
                 const radioName = "correct_" + categoryIndex + "_" + questionIndex;
 
                 return `
-                  <div class="question-card" data-question-card="${categoryIndex}_${questionIndex}">
+                  <div class="question-card ${isReadOnly ? "readonly-question-card" : ""}" data-question-card="${categoryIndex}_${questionIndex}">
                     <div class="question-header">
                       <div class="question-meta">
                         <span><strong>Q no:</strong> <span data-qno-display>${escapeHtml(question.q_no)}</span></span>
@@ -649,9 +690,11 @@
                       </div>
 
                       <div class="question-actions">
-                        <button type="button" class="small move-up-btn" data-category-index="${categoryIndex}" data-question-index="${questionIndex}">Up</button>
-                        <button type="button" class="small move-down-btn" data-category-index="${categoryIndex}" data-question-index="${questionIndex}">Down</button>
-                        <button type="button" class="small danger delete-question-btn" data-category-index="${categoryIndex}" data-question-index="${questionIndex}">Delete</button>
+                        ${!isReadOnly ? `
+                          <button type="button" class="small move-up-btn" data-category-index="${categoryIndex}" data-question-index="${questionIndex}">Up</button>
+                          <button type="button" class="small move-down-btn" data-category-index="${categoryIndex}" data-question-index="${questionIndex}">Down</button>
+                          <button type="button" class="small danger delete-question-btn" data-category-index="${categoryIndex}" data-question-index="${questionIndex}">Delete</button>
+                        ` : ""}
                       </div>
                     </div>
 
@@ -669,6 +712,7 @@
                           data-category-index="${categoryIndex}"
                           data-question-index="${questionIndex}"
                           value="${escapeHtml(question.seq_in_category)}"
+                          ${isReadOnly ? "readonly" : ""}
                         />
                       </div>
 
@@ -682,6 +726,7 @@
                           class="question-text-input question-textarea"
                           data-category-index="${categoryIndex}"
                           data-question-index="${questionIndex}"
+                          ${isReadOnly ? "readonly" : ""}
                         >${escapeHtml(question.question_text)}</textarea>
                       </div>
 
@@ -702,6 +747,7 @@
                                   class="correct-option-input"
                                   data-category-index="${categoryIndex}"
                                   data-question-index="${questionIndex}"
+                                  ${isReadOnly ? "disabled" : ""}
                                 />
                                 Correct
                               </label>
@@ -712,6 +758,7 @@
                               data-answer-key="${answerKey}"
                               data-category-index="${categoryIndex}"
                               data-question-index="${questionIndex}"
+                              ${isReadOnly ? "readonly" : ""}
                             >${escapeHtml(question[answerKey])}</textarea>
                           </div>
                         `;
@@ -721,7 +768,7 @@
                 `;
               }).join("")}
 
-              <div class="save-note">Saving updates only this category.</div>
+              ${!isReadOnly ? '<div class="save-note">Saving updates only this category.</div>' : ''}
             </div>
           </div>
         `;
@@ -731,6 +778,18 @@
     }
 
     function bindEditorEvents() {
+      document.querySelectorAll(".toggle-category-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          const categoryIndex = parseInt(btn.getAttribute("data-category-index"), 10);
+          pageData.categories[categoryIndex]._collapsed = !pageData.categories[categoryIndex]._collapsed;
+          renderPage();
+        });
+      });
+
+      if (isReadOnly) {
+        return;
+      }
+
       document.querySelectorAll(".seq-input").forEach(function(input) {
         input.addEventListener("input", function() {
           const categoryIndex = parseInt(input.getAttribute("data-category-index"), 10);
@@ -825,17 +884,11 @@
           );
         });
       });
-
-      document.querySelectorAll(".toggle-category-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-          const categoryIndex = parseInt(btn.getAttribute("data-category-index"), 10);
-          pageData.categories[categoryIndex]._collapsed = !pageData.categories[categoryIndex]._collapsed;
-          renderPage();
-        });
-      });
     }
 
     function addQuestion(categoryIndex) {
+      if (isReadOnly) return;
+
       const category = pageData.categories[categoryIndex];
 
       category.questions.push({
@@ -857,6 +910,8 @@
     }
 
     function deleteQuestion(categoryIndex, questionIndex) {
+      if (isReadOnly) return;
+
       const confirmed = confirm("Delete this question from the category?");
       if (!confirmed) return;
 
@@ -867,6 +922,8 @@
     }
 
     function moveQuestion(categoryIndex, questionIndex, direction) {
+      if (isReadOnly) return;
+
       const category = pageData.categories[categoryIndex];
       const visibleQuestions = sortQuestions((category.questions || []).filter(function(q) { return !q._deleted; }));
       const actualQuestion = category.questions[questionIndex];
@@ -918,6 +975,11 @@
     }
 
     async function saveCategory(categoryIndex) {
+      if (isReadOnly) {
+        showPageMessage("error", "This exam is view-only. Revert it to draft to edit master questions.");
+        return;
+      }
+
       const category = pageData.categories[categoryIndex];
       const validationError = validateCategory(category);
 
@@ -1006,24 +1068,22 @@
           return;
         }
 
+        isReadOnly = String(urlParams.exam_status || "").toLowerCase() !== "draft";
+
         pageData = {
           exam_id: result.data.exam_id || "",
           exam_title: result.data.exam_title || "",
           question_count: result.data.question_count || 0,
           categories: (result.data.categories || []).map(function(category) {
-
-  const hasQuestions = (category.questions || []).length > 0;
-
-        return {
-          category_code: category.category_code || "",
-          category_label: category.category_label || category.category_code || "",
-          sort_order: category.sort_order || 0,
-          _collapsed: !hasQuestions,
-          _dirty: false,
-          questions: (category.questions || []).map(normaliseQuestion)
-        };
-
-})
+            return {
+              category_code: category.category_code || "",
+              category_label: category.category_label || category.category_code || "",
+              sort_order: category.sort_order || 0,
+              _collapsed: false,
+              _dirty: false,
+              questions: (category.questions || []).map(normaliseQuestion)
+            };
+          })
         };
 
         clearDirty();
@@ -1035,25 +1095,17 @@
     }
 
     window.addEventListener("beforeunload", function(e) {
-      if (!hasUnsavedChanges) return;
+      if (!hasUnsavedChanges || isReadOnly) return;
       e.preventDefault();
       e.returnValue = "";
     });
 
     qs("reloadBtn").addEventListener("click", function() {
-      if (hasUnsavedChanges) {
+      if (!isReadOnly && hasUnsavedChanges) {
         const proceed = confirm("You have unsaved changes. Reload anyway?");
         if (!proceed) return;
       }
       loadMasterQuestions();
-    });
-
-    qs("backBtn").addEventListener("click", function() {
-      if (hasUnsavedChanges) {
-        const proceed = confirm("You have unsaved changes. Leave this page anyway?");
-        if (!proceed) return;
-      }
-      window.history.back();
     });
 
     qs("collapseAllBtn").addEventListener("click", function() {
@@ -1070,6 +1122,14 @@
         category._collapsed = false;
       });
       renderPage();
+    });
+
+    qs("backBtn").addEventListener("click", function() {
+      if (!isReadOnly && hasUnsavedChanges) {
+        const proceed = confirm("You have unsaved changes. Leave this page anyway?");
+        if (!proceed) return;
+      }
+      window.history.back();
     });
 
     loadMasterQuestions();
