@@ -594,7 +594,7 @@
   </div>
 
   <script>
-    const API_TOKEN = "9f98ef3719fa6645943f8056f2b3a2c4dd8e7f20c92ccb83babfcd74a029104f";
+    const API_TOKEN = "PASTE_YOUR_TOKEN_HERE";
 
     const GET_EXAMS_ENDPOINT =
       "https://apim.workato.com/213564_daikinj/exam_management-v10/exams/get";
@@ -955,15 +955,17 @@
       const examCode = exam.exam_id || "";
       const status = String(exam.status || "").toLowerCase();
       const buttons = [];
+      const questionsLabel = status.indexOf("draft") !== -1 ? "Edit questions" : "View questions";
 
       buttons.push(
         '<button type="button" class="copy-btn" data-exam-code="' + escapeHtml(examCode) + '">Copy</button>'
       );
 
+      buttons.push(
+        '<button type="button" class="edit-questions-btn" data-exam-code="' + escapeHtml(examCode) + '" data-exam-status="' + escapeHtml(exam.status || "") + '">' + questionsLabel + '</button>'
+      );
+
       if (status.indexOf("draft") !== -1) {
-        buttons.push(
-          '<button type="button" class="edit-questions-btn" data-exam-code="' + escapeHtml(examCode) + '">Edit questions</button>'
-        );
         buttons.push(
           '<button type="button" class="send-for-translation-btn" data-exam-code="' + escapeHtml(examCode) + '">Send for translation</button>'
         );
@@ -1023,43 +1025,6 @@
           </tr>
         `;
       }).join("");
-
-      document.querySelectorAll(".copy-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-          const examCode = btn.getAttribute("data-exam-code");
-          const exam = currentExams.find(function(item) {
-            return (item.exam_id || "") === examCode;
-          });
-          if (exam) {
-            openCopyModal(exam);
-          }
-          closeAllActionMenus();
-        });
-      });
-
-      document.querySelectorAll(".edit-questions-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-          const examCode = btn.getAttribute("data-exam-code");
-          openMasterQuestionsPage(examCode, exam.status);
-          closeAllActionMenus();
-        });
-      });
-
-      document.querySelectorAll(".send-for-translation-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-          const examCode = btn.getAttribute("data-exam-code");
-          sendForTranslation(examCode);
-          closeAllActionMenus();
-        });
-      });
-
-      document.querySelectorAll(".revert-to-draft-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-          const examCode = btn.getAttribute("data-exam-code");
-          revertToDraft(examCode);
-          closeAllActionMenus();
-        });
-      });
 
       if (pendingHighlightExamCode) {
         const row = document.querySelector('tr[data-exam-code="' + CSS.escape(pendingHighlightExamCode) + '"]');
@@ -1502,6 +1467,42 @@
       qs("filterPillar").value = "";
       qs("filterStatus").value = "";
       applyExamFilters();
+    });
+
+    qs("examsBody").addEventListener("click", function(e) {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+
+      const examCode = btn.getAttribute("data-exam-code");
+      const examStatus = btn.getAttribute("data-exam-status");
+
+      if (btn.classList.contains("copy-btn")) {
+        const exam = currentExams.find(function(item) {
+          return (item.exam_id || "") === examCode;
+        });
+        if (exam) {
+          openCopyModal(exam);
+        }
+        closeAllActionMenus();
+        return;
+      }
+
+      if (btn.classList.contains("edit-questions-btn")) {
+        openMasterQuestionsPage(examCode, examStatus);
+        closeAllActionMenus();
+        return;
+      }
+
+      if (btn.classList.contains("send-for-translation-btn")) {
+        sendForTranslation(examCode);
+        closeAllActionMenus();
+        return;
+      }
+
+      if (btn.classList.contains("revert-to-draft-btn")) {
+        revertToDraft(examCode);
+        closeAllActionMenus();
+      }
     });
 
     qs("examYear").value = new Date().getFullYear() + 1;
