@@ -1320,9 +1320,24 @@
           const totalChanged = result.data && result.data.scope && result.data.scope.total_changed != null
             ? result.data.scope.total_changed
             : 0;
-          const changedQNos = result.data && result.data.scope && result.data.scope.changed_q_nos
-            ? result.data.scope.changed_q_nos.join(", ")
-            : "";
+          let changedQNos = "";
+
+          if (result.data && result.data.scope && result.data.scope.changed_q_nos != null) {
+            const rawChanged = result.data.scope.changed_q_nos;
+          
+            if (Array.isArray(rawChanged)) {
+              changedQNos = rawChanged.join(", ");
+            } else if (typeof rawChanged === "string") {
+              try {
+                const parsedChanged = JSON.parse(rawChanged);
+                changedQNos = Array.isArray(parsedChanged) ? parsedChanged.join(", ") : rawChanged;
+              } catch (e) {
+                changedQNos = rawChanged;
+              }
+            } else {
+              changedQNos = String(rawChanged);
+            }
+          }
           const languages = result.data && result.data.languages ? result.data.languages : [];
           const languageSummary = languages.length
             ? languages.map(function(lang) {
