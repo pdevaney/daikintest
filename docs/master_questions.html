@@ -169,6 +169,7 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       background: #fff;
+      align-items: center;
     }
 
     .summary-item {
@@ -178,6 +179,10 @@
 
     .summary-item strong {
       color: #222;
+    }
+
+    .summary-spacer {
+      flex: 1 1 auto;
     }
 
     .category-card {
@@ -312,7 +317,8 @@
     }
 
     input,
-    textarea {
+    textarea,
+    select {
       font-family: inherit;
       font-size: 14px;
       padding: 10px;
@@ -388,6 +394,153 @@
       color: #6a5200;
     }
 
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid #dddddd;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .pill-translation {
+      background: #fff6dd;
+      border-color: #f3dfa4;
+      color: #6a5200;
+    }
+
+    .pill-submitted {
+      background: #fff6dd;
+      border-color: #f3dfa4;
+      color: #6a5200;
+    }
+
+    .pill-approved {
+      background: #eef4ff;
+      border-color: #c8d8ff;
+      color: #20355d;
+    }
+
+    .pill-published {
+      background: #e9f8ee;
+      border-color: #bfe6c9;
+      color: #15552e;
+    }
+
+    .pill-default {
+      background: #ffffff;
+      border-color: #dddddd;
+      color: #333333;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 999;
+    }
+
+    .modal-backdrop.visible {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 980px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 16px;
+      background: #fafafa;
+      border-bottom: 1px solid #e6e6e6;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: #222;
+    }
+
+    .modal-body {
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .modal-footer {
+      padding: 14px 16px;
+      border-top: 1px solid #e6e6e6;
+      background: #fafafa;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .languages-summary {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      font-size: 13px;
+      color: #444;
+    }
+
+    .languages-table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    table.languages-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .languages-table th,
+    .languages-table td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .languages-table th {
+      background: var(--header);
+      font-size: 12px;
+      color: #444;
+      font-weight: 700;
+    }
+
+    .languages-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .muted-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     @media (max-width: 920px) {
       .field-row {
         grid-template-columns: 1fr;
@@ -395,6 +548,11 @@
 
       body {
         margin: 12px;
+      }
+
+      .languages-table th,
+      .languages-table td {
+        padding: 10px 8px;
       }
     }
   </style>
@@ -409,6 +567,7 @@
       </div>
 
       <div class="top-actions">
+        <button class="ghost" id="manageLanguagesBtn" type="button">Manage Languages</button>
         <button class="ghost" id="collapseAllBtn" type="button">Collapse all</button>
         <button class="ghost" id="expandAllBtn" type="button">Expand all</button>
         <button class="ghost" id="backBtn" type="button">Back</button>
@@ -427,9 +586,62 @@
       <div class="summary-item"><strong>Exam title:</strong> <span id="summaryExamTitle">—</span></div>
       <div class="summary-item"><strong>Total questions:</strong> <span id="summaryQuestionCount">0</span></div>
       <div class="summary-item"><strong>Unsaved changes:</strong> <span id="summaryDirty">No</span></div>
+      <div class="summary-spacer"></div>
+      <div class="summary-item"><strong>Languages:</strong> <span id="summaryLanguageCount">0</span></div>
+      <div class="summary-item"><strong>Published:</strong> <span id="summaryPublishedCount">0</span></div>
+      <div class="summary-item"><strong>Approved:</strong> <span id="summaryApprovedCount">0</span></div>
+      <div class="summary-item"><strong>Submitted:</strong> <span id="summarySubmittedCount">0</span></div>
     </div>
 
     <div id="categoriesContainer"></div>
+  </div>
+
+  <div class="modal-backdrop" id="languagesModalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="languagesModalTitle">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="languagesModalTitle">Manage Exam Languages</h3>
+          <div class="muted-note" id="languagesModalSubhead">Loading languages…</div>
+        </div>
+        <button class="ghost" id="closeLanguagesModalBtn" type="button">Close</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="languagesMessage" class="message"></div>
+
+        <div class="languages-summary">
+          <div><strong>Total:</strong> <span id="modalTotalLanguages">0</span></div>
+          <div><strong>Published:</strong> <span id="modalPublishedLanguages">0</span></div>
+          <div><strong>Approved:</strong> <span id="modalApprovedLanguages">0</span></div>
+          <div><strong>Submitted:</strong> <span id="modalSubmittedLanguages">0</span></div>
+          <div><strong>In translation:</strong> <span id="modalInTranslationLanguages">0</span></div>
+        </div>
+
+        <div class="languages-table-wrap">
+          <table class="languages-table">
+            <thead>
+              <tr>
+                <th style="width: 180px;">Language</th>
+                <th style="width: 180px;">Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="languagesTableBody">
+              <tr>
+                <td colspan="3">Loading languages…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="muted-note">Only HQ actions appear here. Translators do not approve or publish languages.</div>
+        <div>
+          <button class="secondary" id="refreshLanguagesBtn" type="button">Refresh</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -461,6 +673,18 @@
       box.textContent = "";
     }
 
+    function showLanguagesMessage(type, text) {
+      const box = qs("languagesMessage");
+      box.className = "message " + type;
+      box.textContent = text;
+    }
+
+    function clearLanguagesMessage() {
+      const box = qs("languagesMessage");
+      box.className = "message";
+      box.textContent = "";
+    }
+
     function getUrlParams() {
       const params = new URLSearchParams(window.location.search);
       return {
@@ -478,6 +702,7 @@
     let pageData = null;
     let hasUnsavedChanges = false;
     let isReadOnly = false;
+    let examLanguages = [];
 
     function markDirty() {
       hasUnsavedChanges = true;
@@ -496,7 +721,7 @@
       };
     }
 
-    function buildAuthPayload(formSubtype) {
+    function buildWrappedPayload(formSubtype) {
       return {
         request: {
           form_type: "exam_admin",
@@ -512,12 +737,42 @@
       };
     }
 
+    function buildFlatPayload(formSubtype) {
+      return {
+        form_type: "exam_admin",
+        form_subtype: formSubtype,
+        iframe_params: {
+          user_id: urlParams.user_id,
+          username: urlParams.username,
+          auth_code: urlParams.auth_code,
+          hash: urlParams.hash,
+          iframe_src: urlParams.iframe_src
+        }
+      };
+    }
+
     function getLoadEndpoint(examId) {
       return API_BASE + "/exams/" + encodeURIComponent(examId) + "/master-questions/get";
     }
 
     function getSaveEndpoint(examId) {
       return API_BASE + "/exams/" + encodeURIComponent(examId) + "/master-questions/save";
+    }
+
+    function getLanguagesEndpoint(examId) {
+      return API_BASE + "/exams/" + encodeURIComponent(examId) + "/languages/get";
+    }
+
+    function getApproveLanguageEndpoint(examId, langCode) {
+      return API_BASE + "/exams/" + encodeURIComponent(examId) + "/translations/" + encodeURIComponent(langCode) + "/approve";
+    }
+
+    function getRejectLanguageEndpoint(examId, langCode) {
+      return API_BASE + "/exams/" + encodeURIComponent(examId) + "/translations/" + encodeURIComponent(langCode) + "/reject";
+    }
+
+    function getPublishLanguageEndpoint(examId, langCode) {
+      return API_BASE + "/exams/" + encodeURIComponent(examId) + "/languages/" + encodeURIComponent(langCode) + "/publish";
     }
 
     function normaliseQuestion(question) {
@@ -577,6 +832,15 @@
       return maxSeq + 1;
     }
 
+    function getStatusPillClass(status) {
+      const s = String(status || "").toLowerCase();
+      if (s === "published") return "pill-published";
+      if (s === "approved") return "pill-approved";
+      if (s === "submitted") return "pill-submitted";
+      if (s === "in_translation") return "pill-translation";
+      return "pill-default";
+    }
+
     function updateSummary() {
       if (!pageData) return;
 
@@ -592,7 +856,6 @@
 
       qs("summaryQuestionCount").textContent = String(count);
       qs("summaryDirty").textContent = hasUnsavedChanges ? "Yes" : "No";
-
       qs("pageTitle").textContent = "Master Questions";
       qs("pageSubhead").textContent = (pageData.exam_title || "") + " (" + (pageData.exam_id || "") + ")";
 
@@ -600,6 +863,16 @@
       if (readonlyBanner) {
         readonlyBanner.classList.toggle("visible", isReadOnly);
       }
+
+      const total = examLanguages.length;
+      const published = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "published"; }).length;
+      const approved = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "approved"; }).length;
+      const submitted = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "submitted"; }).length;
+
+      qs("summaryLanguageCount").textContent = String(total);
+      qs("summaryPublishedCount").textContent = String(published);
+      qs("summaryApprovedCount").textContent = String(approved);
+      qs("summarySubmittedCount").textContent = String(submitted);
     }
 
     function updateCategoryHeader(categoryIndex) {
@@ -775,6 +1048,55 @@
       }).join("");
 
       bindEditorEvents();
+    }
+
+    function renderLanguagesModal() {
+      const tbody = qs("languagesTableBody");
+      const total = examLanguages.length;
+      const published = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "published"; }).length;
+      const approved = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "approved"; }).length;
+      const submitted = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "submitted"; }).length;
+      const inTranslation = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "in_translation"; }).length;
+
+      qs("modalTotalLanguages").textContent = String(total);
+      qs("modalPublishedLanguages").textContent = String(published);
+      qs("modalApprovedLanguages").textContent = String(approved);
+      qs("modalSubmittedLanguages").textContent = String(submitted);
+      qs("modalInTranslationLanguages").textContent = String(inTranslation);
+      qs("languagesModalSubhead").textContent = (pageData ? pageData.exam_title : "") + " (" + (urlParams.exam_id || "") + ")";
+
+      if (!examLanguages.length) {
+        tbody.innerHTML = '<tr><td colspan="3">No languages found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = examLanguages.map(function(language) {
+        const status = String(language.status || "").toLowerCase();
+        let actionsHtml = '<span class="muted-note">—</span>';
+
+        if (status === "submitted") {
+          actionsHtml = `
+            <div class="languages-actions">
+              <button type="button" class="small approve-language-btn" data-lang-code="${escapeHtml(language.lang_code)}">Approve</button>
+              <button type="button" class="small danger reject-language-btn" data-lang-code="${escapeHtml(language.lang_code)}">Reject</button>
+            </div>
+          `;
+        } else if (status === "approved") {
+          actionsHtml = `
+            <div class="languages-actions">
+              <button type="button" class="small publish-language-btn" data-lang-code="${escapeHtml(language.lang_code)}">Publish</button>
+            </div>
+          `;
+        }
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(language.lang_code || "")}</strong></td>
+            <td><span class="pill ${getStatusPillClass(language.status)}">${escapeHtml(language.status || "")}</span></td>
+            <td>${actionsHtml}</td>
+          </tr>
+        `;
+      }).join("");
     }
 
     function bindEditorEvents() {
@@ -1053,7 +1375,7 @@
       try {
         clearPageMessage();
 
-        const payload = buildAuthPayload("get_master_questions");
+        const payload = buildWrappedPayload("get_master_questions");
 
         const response = await fetch(getLoadEndpoint(urlParams.exam_id), {
           method: "POST",
@@ -1094,6 +1416,119 @@
       }
     }
 
+    async function loadExamLanguages() {
+      try {
+        clearLanguagesMessage();
+        qs("languagesTableBody").innerHTML = '<tr><td colspan="3">Loading languages…</td></tr>';
+
+        const response = await fetch(getLanguagesEndpoint(urlParams.exam_id), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(buildFlatPayload("get_languages"))
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== "success") {
+          showLanguagesMessage("error", result.message || "Could not load exam languages");
+          return;
+        }
+
+        examLanguages = (result.data && result.data.languages) ? result.data.languages : [];
+        renderLanguagesModal();
+        updateSummary();
+      } catch (err) {
+        showLanguagesMessage("error", "Error loading exam languages");
+        console.error(err);
+      }
+    }
+
+    async function approveLanguage(langCode) {
+      const confirmed = confirm("Approve language " + langCode + "?");
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(getApproveLanguageEndpoint(urlParams.exam_id, langCode), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(buildFlatPayload("approve_language"))
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+          showLanguagesMessage("success", result.message || ("Language approved: " + langCode));
+          await loadExamLanguages();
+        } else {
+          showLanguagesMessage("error", result.message || ("Could not approve language: " + langCode));
+        }
+      } catch (err) {
+        showLanguagesMessage("error", "API error while approving language");
+        console.error(err);
+      }
+    }
+
+    async function rejectLanguage(langCode) {
+      const confirmed = confirm("Reject language " + langCode + " and return it to translation?");
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(getRejectLanguageEndpoint(urlParams.exam_id, langCode), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(buildFlatPayload("reject_language"))
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+          showLanguagesMessage("success", result.message || ("Language rejected: " + langCode));
+          await loadExamLanguages();
+        } else {
+          showLanguagesMessage("error", result.message || ("Could not reject language: " + langCode));
+        }
+      } catch (err) {
+        showLanguagesMessage("error", "API error while rejecting language");
+        console.error(err);
+      }
+    }
+
+    async function publishLanguage(langCode) {
+      const confirmed = confirm("Publish language " + langCode + "?");
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(getPublishLanguageEndpoint(urlParams.exam_id, langCode), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(buildFlatPayload("publish_language"))
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success") {
+          showLanguagesMessage("success", result.message || ("Language published: " + langCode));
+          await loadExamLanguages();
+        } else {
+          showLanguagesMessage("error", result.message || ("Could not publish language: " + langCode));
+        }
+      } catch (err) {
+        showLanguagesMessage("error", "API error while publishing language");
+        console.error(err);
+      }
+    }
+
+    function openLanguagesModal() {
+      qs("languagesModalBackdrop").classList.add("visible");
+      qs("languagesModalBackdrop").setAttribute("aria-hidden", "false");
+      loadExamLanguages();
+    }
+
+    function closeLanguagesModal() {
+      qs("languagesModalBackdrop").classList.remove("visible");
+      qs("languagesModalBackdrop").setAttribute("aria-hidden", "true");
+    }
+
     window.addEventListener("beforeunload", function(e) {
       if (!hasUnsavedChanges || isReadOnly) return;
       e.preventDefault();
@@ -1106,6 +1541,7 @@
         if (!proceed) return;
       }
       loadMasterQuestions();
+      loadExamLanguages();
     });
 
     qs("collapseAllBtn").addEventListener("click", function() {
@@ -1132,7 +1568,54 @@
       window.history.back();
     });
 
+    qs("manageLanguagesBtn").addEventListener("click", function() {
+      openLanguagesModal();
+    });
+
+    qs("closeLanguagesModalBtn").addEventListener("click", function() {
+      closeLanguagesModal();
+    });
+
+    qs("refreshLanguagesBtn").addEventListener("click", function() {
+      loadExamLanguages();
+    });
+
+    qs("languagesModalBackdrop").addEventListener("click", function(e) {
+      if (e.target === qs("languagesModalBackdrop")) {
+        closeLanguagesModal();
+      }
+    });
+
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape" && qs("languagesModalBackdrop").classList.contains("visible")) {
+        closeLanguagesModal();
+      }
+    });
+
+    qs("languagesTableBody").addEventListener("click", function(e) {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+
+      const langCode = btn.getAttribute("data-lang-code");
+      if (!langCode) return;
+
+      if (btn.classList.contains("approve-language-btn")) {
+        approveLanguage(langCode);
+        return;
+      }
+
+      if (btn.classList.contains("reject-language-btn")) {
+        rejectLanguage(langCode);
+        return;
+      }
+
+      if (btn.classList.contains("publish-language-btn")) {
+        publishLanguage(langCode);
+      }
+    });
+
     loadMasterQuestions();
+    loadExamLanguages();
   </script>
 </body>
 </html>
