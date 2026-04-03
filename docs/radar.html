@@ -432,7 +432,7 @@
         username: params.get("username") || "",
         auth_code: params.get("auth_code") || "",
         hash: params.get("hash") || "",
-        iframe_src: params.get("iframe_src") || ""
+        iframe_src: params.get("iframe_src") || window.location.href
       };
     }
 
@@ -443,8 +443,8 @@
         urlParams.user_id &&
         urlParams.username &&
         urlParams.auth_code &&
-        urlParams.hash
-        
+        urlParams.hash &&
+        urlParams.iframe_src
       );
     }
 
