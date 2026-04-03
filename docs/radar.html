@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>My Exam Radar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #f6f6f6;
+      --card: #ffffff;
+      --border: #dddddd;
+      --muted: #666666;
+      --header: #fafafa;
+      --primary: #005eb8;
+      --primaryHover: #004a92;
+      --secondary: #666666;
+      --secondaryHover: #555555;
+      --successBg: #e9f8ee;
+      --successBorder: #bfe6c9;
+      --successText: #15552e;
+      --errorBg: #fff2f2;
+      --errorBorder: #f0c8c8;
+      --errorText: #b00020;
+      --shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+      --passColor: #d12c2c;
+      --previousColor: #888888;
+      --currentColor: #005eb8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 24px;
+      background: var(--bg);
+      color: #222;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 1200px;
+      margin: 0 auto;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .subhead {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    button:hover {
+      background: var(--primaryHover);
+    }
+
+    button.secondary {
+      background: var(--secondary);
+    }
+
+    button.secondary:hover {
+      background: var(--secondaryHover);
+    }
+
+    .message {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      display: none;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .message.error {
+      display: block;
+      background: var(--errorBg);
+      border: 1px solid var(--errorBorder);
+      color: var(--errorText);
+    }
+
+    .summary-bar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .summary-item {
+      font-size: 13px;
+      color: #444;
+    }
+
+    .summary-item strong {
+      display: block;
+      color: #222;
+      margin-bottom: 4px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(320px, 1.2fr) minmax(320px, 0.8fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 12px 14px;
+      background: var(--header);
+      border-bottom: 1px solid #e6e6e6;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .chart-wrap {
+      width: 100%;
+      overflow: auto;
+    }
+
+    .chart-holder {
+      min-height: 620px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .legend {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #444;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-swatch {
+      width: 20px;
+      height: 3px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .legend-swatch.pass {
+      background: var(--passColor);
+      border-top: 2px dashed var(--passColor);
+      height: 0;
+      width: 22px;
+    }
+
+    .legend-swatch.previous {
+      background: var(--previousColor);
+    }
+
+    .legend-swatch.current {
+      background: var(--currentColor);
+    }
+
+    .results-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .result-row {
+      border: 1px solid #e7e7e7;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .result-row-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .result-title {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .result-code {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .result-scores {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(70px, 1fr));
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .score-box {
+      background: #fafafa;
+      border: 1px solid #ececec;
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .score-box strong {
+      display: block;
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .score-box span {
+      font-size: 16px;
+      font-weight: 700;
+      color: #222;
+    }
+
+    .pass-yes,
+    .pass-no {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pass-yes {
+      background: #e9f8ee;
+      border: 1px solid #bfe6c9;
+      color: #15552e;
+    }
+
+    .pass-no {
+      background: #fff2f2;
+      border: 1px solid #f0c8c8;
+      color: #b00020;
+    }
+
+    .empty-note {
+      padding: 16px;
+      border: 1px dashed #d8d8d8;
+      border-radius: 8px;
+      color: #666;
+      background: #fafafa;
+      font-size: 13px;
+    }
+
+    @media (max-width: 980px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-bar {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+
+      body {
+        margin: 12px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .summary-bar {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">My Exam Radar</h1>
+        <div class="subhead" id="pageSubhead">Loading current exam results…</div>
+      </div>
+
+      <div class="top-actions">
+        <button class="secondary" id="reloadBtn" type="button">Reload</button>
+      </div>
+    </div>
+
+    <div id="pageMessage" class="message"></div>
+
+    <div class="summary-bar" id="summaryBar">
+      <div class="summary-item">
+        <strong>Current exam</strong>
+        <span id="summaryCurrentExam">—</span>
+      </div>
+      <div class="summary-item">
+        <strong>Previous exam</strong>
+        <span id="summaryPreviousExam">—</span>
+      </div>
+      <div class="summary-item">
+        <strong>Overall score</strong>
+        <span id="summaryOverallScore">—</span>
+      </div>
+      <div class="summary-item">
+        <strong>Pass status</strong>
+        <span id="summaryPassStatus">—</span>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel">
+        <div class="panel-header">Radar chart</div>
+        <div class="panel-body">
+          <div class="chart-wrap">
+            <div id="chartHolder" class="chart-holder"></div>
+          </div>
+
+          <div class="legend">
+            <div class="legend-item">
+              <span class="legend-swatch pass"></span>
+              <span>Pass line</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-swatch previous"></span>
+              <span>Last exam</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-swatch current"></span>
+              <span>Current exam</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">Category scores</div>
+        <div class="panel-body">
+          <div id="resultsList" class="results-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_TOKEN = "9f98ef3719fa6645943f8056f2b3a2c4dd8e7f20c92ccb83babfcd74a029104f";
+    const RADAR_ENDPOINT = "https://apim.workato.com/213564_daikinj/exam_management-v10/exams/radar";
+    const RADAR_SUBTYPE = "get_my_exam_radar";
+
+    let pageData = null;
+
+    function qs(id) {
+      return document.getElementById(id);
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showPageMessage(type, text) {
+      const box = qs("pageMessage");
+      box.className = "message " + type;
+      box.textContent = text;
+    }
+
+    function clearPageMessage() {
+      const box = qs("pageMessage");
+      box.className = "message";
+      box.textContent = "";
+    }
+
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        user_id: params.get("user_id") || "",
+        username: params.get("username") || "",
+        auth_code: params.get("auth_code") || "",
+        hash: params.get("hash") || "",
+        iframe_src: params.get("iframe_src") || ""
+      };
+    }
+
+    const urlParams = getUrlParams();
+
+    function hasAuthParams() {
+      return !!(
+        urlParams.user_id &&
+        urlParams.username &&
+        urlParams.auth_code &&
+        urlParams.hash &&
+        urlParams.iframe_src
+      );
+    }
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Api-token": API_TOKEN
+      };
+    }
+
+    function buildRequestPayload(formType, formSubtype, formDetails) {
+      const request = {
+        form_type: formType,
+        form_subtype: formSubtype,
+        iframe_params: {
+          user_id: urlParams.user_id,
+          username: urlParams.username,
+          auth_code: urlParams.auth_code,
+          hash: urlParams.hash,
+          iframe_src: urlParams.iframe_src
+        }
+      };
+
+      if (formDetails) {
+        request.form_details = formDetails;
+      }
+
+      return request;
+    }
+
+    function getRadarEndpoint() {
+      return RADAR_ENDPOINT;
+    }
+
+    function parseNumber(value, fallback) {
+      const n = Number(value);
+      return isNaN(n) ? (fallback || 0) : n;
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return "—";
+
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return dateString;
+
+      return d.toLocaleDateString("en-NZ", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+    }
+
+    function sortCategories(categories) {
+      return (categories || []).slice().sort(function(a, b) {
+        return parseNumber(a.sort_order, 0) - parseNumber(b.sort_order, 0);
+      });
+    }
+
+    function normaliseData(raw) {
+      const data = raw && raw.data ? raw.data : {};
+      const currentExam = data.current_exam || {};
+      const previousExam = data.previous_exam || null;
+      const categories = sortCategories(data.categories || []).map(function(item) {
+        return {
+          category_code: item.category_code || "",
+          category_name: item.category_name || item.category_code || "",
+          sort_order: parseNumber(item.sort_order, 0),
+          current_score: parseNumber(item.current_score, 0),
+          previous_score: item.previous_score == null ? null : parseNumber(item.previous_score, 0),
+          pass_score: parseNumber(item.pass_score, 0)
+        };
+      });
+
+      return {
+        status: raw && raw.status ? raw.status : "",
+        message: raw && raw.message ? raw.message : "",
+        current_exam: currentExam,
+        previous_exam: previousExam,
+        categories: categories
+      };
+    }
+
+    function updateSummary() {
+      if (!pageData) {
+        qs("summaryCurrentExam").textContent = "—";
+        qs("summaryPreviousExam").textContent = "—";
+        qs("summaryOverallScore").textContent = "—";
+        qs("summaryPassStatus").textContent = "—";
+        qs("pageSubhead").textContent = "No data loaded.";
+        return;
+      }
+
+      const currentExam = pageData.current_exam || {};
+      const previousExam = pageData.previous_exam || null;
+
+      qs("summaryCurrentExam").textContent =
+        (currentExam.exam_name || currentExam.exam_code || "—");
+
+      qs("summaryPreviousExam").textContent =
+        previousExam ? (previousExam.exam_name || previousExam.exam_code || "—") : "No previous exam";
+
+      qs("summaryOverallScore").textContent =
+        currentExam.overall_score != null ? String(currentExam.overall_score) + "%" : "—";
+
+      qs("summaryPassStatus").innerHTML =
+        currentExam.passed === true
+          ? '<span class="pass-yes">Passed</span>'
+          : currentExam.passed === false
+            ? '<span class="pass-no">Not passed</span>'
+            : "—";
+
+      qs("pageTitle").textContent = "My Exam Radar";
+      qs("pageSubhead").textContent =
+        (currentExam.exam_name || currentExam.exam_code || "Current exam") +
+        (currentExam.completed_at ? " • Completed " + formatDate(currentExam.completed_at) : "");
+    }
+
+    function renderCategoryList() {
+      const container = qs("resultsList");
+
+      if (!pageData || !pageData.categories.length) {
+        container.innerHTML = '<div class="empty-note">No category scores are available.</div>';
+        return;
+      }
+
+      container.innerHTML = pageData.categories.map(function(cat) {
+        return `
+          <div class="result-row">
+            <div class="result-row-top">
+              <div>
+                <div class="result-title">${escapeHtml(cat.category_name)}</div>
+                <div class="result-code">${escapeHtml(cat.category_code)}</div>
+              </div>
+            </div>
+
+            <div class="result-scores">
+              <div class="score-box">
+                <strong>Current</strong>
+                <span>${escapeHtml(cat.current_score)}%</span>
+              </div>
+              <div class="score-box">
+                <strong>Last</strong>
+                <span>${cat.previous_score == null ? "—" : escapeHtml(cat.previous_score) + "%"}</span>
+              </div>
+              <div class="score-box">
+                <strong>Pass</strong>
+                <span>${escapeHtml(cat.pass_score)}%</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function polarToCartesian(cx, cy, radius, angleRadians) {
+      return {
+        x: cx + radius * Math.cos(angleRadians),
+        y: cy + radius * Math.sin(angleRadians)
+      };
+    }
+
+    function buildPolygonPoints(values, cx, cy, maxRadius, maxValue) {
+      if (!values.length) return "";
+
+      return values.map(function(value, index) {
+        const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / values.length));
+        const radius = (Math.max(0, Math.min(value, maxValue)) / maxValue) * maxRadius;
+        const point = polarToCartesian(cx, cy, radius, angle);
+        return point.x.toFixed(2) + "," + point.y.toFixed(2);
+      }).join(" ");
+    }
+
+    function renderRadarChart() {
+      const holder = qs("chartHolder");
+
+      if (!pageData || !pageData.categories.length) {
+        holder.innerHTML = '<div class="empty-note">No radar data is available.</div>';
+        return;
+      }
+
+      const categories = pageData.categories;
+      const labels = categories.map(function(c) { return c.category_name; });
+      const currentValues = categories.map(function(c) { return c.current_score; });
+      const previousValues = categories.map(function(c) {
+        return c.previous_score == null ? 0 : c.previous_score;
+      });
+      const passValues = categories.map(function(c) { return c.pass_score; });
+
+      const hasPrevious = categories.some(function(c) {
+        return c.previous_score != null;
+      });
+
+      const width = 760;
+      const height = 620;
+      const cx = 330;
+      const cy = 300;
+      const maxRadius = 190;
+      const labelRadius = 235;
+      const maxValue = 100;
+      const gridLevels = [20, 40, 60, 80, 100];
+
+      const axisLines = labels.map(function(label, index) {
+        const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / labels.length));
+        const end = polarToCartesian(cx, cy, maxRadius, angle);
+        const labelPoint = polarToCartesian(cx, cy, labelRadius, angle);
+
+        let anchor = "middle";
+        if (labelPoint.x > cx + 15) anchor = "start";
+        if (labelPoint.x < cx - 15) anchor = "end";
+
+        return `
+          <line x1="${cx}" y1="${cy}" x2="${end.x}" y2="${end.y}" stroke="#cfcfcf" stroke-width="1" />
+          <text x="${labelPoint.x}" y="${labelPoint.y}" font-size="13" fill="#333" text-anchor="${anchor}" dominant-baseline="middle">
+            ${escapeHtml(label)}
+          </text>
+        `;
+      }).join("");
+
+      const gridPolygons = gridLevels.map(function(level) {
+        const radius = (level / maxValue) * maxRadius;
+        const points = labels.map(function(_, index) {
+          const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / labels.length));
+          const p = polarToCartesian(cx, cy, radius, angle);
+          return p.x.toFixed(2) + "," + p.y.toFixed(2);
+        }).join(" ");
+
+        return `
+          <polygon points="${points}" fill="none" stroke="#dddddd" stroke-width="1" />
+          <text x="${cx + 8}" y="${cy - radius + 4}" font-size="11" fill="#777">${level}</text>
+        `;
+      }).join("");
+
+      const passPoints = buildPolygonPoints(passValues, cx, cy, maxRadius, maxValue);
+      const previousPoints = buildPolygonPoints(previousValues, cx, cy, maxRadius, maxValue);
+      const currentPoints = buildPolygonPoints(currentValues, cx, cy, maxRadius, maxValue);
+
+      const currentDots = categories.map(function(cat, index) {
+        const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / categories.length));
+        const radius = (cat.current_score / maxValue) * maxRadius;
+        const point = polarToCartesian(cx, cy, radius, angle);
+        return `<circle cx="${point.x}" cy="${point.y}" r="4" fill="var(--currentColor)" />`;
+      }).join("");
+
+      const previousDots = hasPrevious ? categories.map(function(cat, index) {
+        if (cat.previous_score == null) return "";
+        const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / categories.length));
+        const radius = (cat.previous_score / maxValue) * maxRadius;
+        const point = polarToCartesian(cx, cy, radius, angle);
+        return `<circle cx="${point.x}" cy="${point.y}" r="3.5" fill="var(--previousColor)" />`;
+      }).join("") : "";
+
+      holder.innerHTML = `
+        <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Radar chart of exam category scores">
+          <rect x="0" y="0" width="${width}" height="${height}" fill="#fff"></rect>
+
+          ${gridPolygons}
+          ${axisLines}
+
+          <polygon
+            points="${passPoints}"
+            fill="none"
+            stroke="var(--passColor)"
+            stroke-width="2"
+            stroke-dasharray="6 5">
+          </polygon>
+
+          ${
+            hasPrevious ? `
+            <polygon
+              points="${previousPoints}"
+              fill="rgba(136,136,136,0.08)"
+              stroke="var(--previousColor)"
+              stroke-width="2">
+            </polygon>
+            ` : ""
+          }
+
+          <polygon
+            points="${currentPoints}"
+            fill="rgba(0,94,184,0.14)"
+            stroke="var(--currentColor)"
+            stroke-width="3">
+          </polygon>
+
+          ${previousDots}
+          ${currentDots}
+        </svg>
+      `;
+    }
+
+    function renderPage() {
+      updateSummary();
+      renderRadarChart();
+      renderCategoryList();
+    }
+
+    async function loadRadarData() {
+      try {
+        clearPageMessage();
+
+        if (!hasAuthParams()) {
+          throw new Error("Missing authentication parameters in the URL.");
+        }
+
+        const payload = buildRequestPayload("exam_admin", RADAR_SUBTYPE);
+
+        const response = await fetch(getRadarEndpoint(), {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== "success") {
+          showPageMessage(
+            "error",
+            (result && (result.error_message || result.message)) || "Could not load radar data."
+          );
+          return;
+        }
+
+        pageData = normaliseData(result);
+        renderPage();
+      } catch (err) {
+        showPageMessage("error", err.message || "Error loading radar data.");
+        console.error(err);
+      }
+    }
+
+    qs("reloadBtn").addEventListener("click", function() {
+      loadRadarData();
+    });
+
+    loadRadarData();
+  </script>
+</body>
+</html>
