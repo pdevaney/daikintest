@@ -1506,7 +1506,7 @@
 
         const result = await response.json();
 
-        if (response.ok && result.status === "success") {
+        if (response.ok && result.status === "SUCCESS") {
           showLanguagesMessage("success", result.message || ("Language published: " + langCode));
           await loadExamLanguages();
         } else {
