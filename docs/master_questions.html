@@ -1383,12 +1383,30 @@
           body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        const rawText = await response.text();
+let result = {};
 
-        if (!response.ok || result.status !== "success") {
-          showPageMessage("error", result.message || "Could not load master questions");
-          return;
-        }
+try {
+  result = rawText ? JSON.parse(rawText) : {};
+} catch (e) {
+  showPageMessage(
+    "error",
+    "Could not load master questions. The API returned an invalid response.\n\nHTTP status: " + response.status
+  );
+  console.error("Invalid API response:", rawText);
+  return;
+}
+
+if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
+  showPageMessage(
+    "error",
+    result.message ||
+    result.error_message ||
+    "Could not load master questions.\n\nHTTP status: " + response.status
+  );
+  console.error("Master questions API error:", response.status, result);
+  return;
+}
 
         isReadOnly = String(urlParams.exam_status || "").toLowerCase() !== "draft";
 
