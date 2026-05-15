@@ -673,6 +673,23 @@
       box.textContent = "";
     }
 
+    function showFatalPageError(text) {
+      showPageMessage("error", text);
+
+      const subhead = qs("pageSubhead");
+      if (subhead) {
+        subhead.textContent = "Unable to load exam";
+      }
+
+      const container = qs("categoriesContainer");
+      if (container) {
+        container.innerHTML =
+          '<div class="message error" style="display:block; margin-top: 14px;">' +
+          escapeHtml(text) +
+          '</div>';
+      }
+    }
+
     function showLanguagesMessage(type, text) {
       const box = qs("languagesMessage");
       box.className = "message " + type;
@@ -1389,8 +1406,7 @@ let result = {};
 try {
   result = rawText ? JSON.parse(rawText) : {};
 } catch (e) {
-  showPageMessage(
-    "error",
+  showFatalPageError(
     "Could not load master questions. The API returned an invalid response.\n\nHTTP status: " + response.status
   );
   console.error("Invalid API response:", rawText);
@@ -1398,8 +1414,7 @@ try {
 }
 
 if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
-  showPageMessage(
-    "error",
+  showFatalPageError(
     result.message ||
     result.error_message ||
     "Could not load master questions.\n\nHTTP status: " + response.status
@@ -1429,7 +1444,7 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
         clearDirty();
         renderPage();
       } catch (err) {
-        showPageMessage("error", "Error loading master questions");
+        showFatalPageError("Error loading master questions");
         console.error(err);
       }
     }
@@ -1632,8 +1647,11 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
       }
     });
 
-    loadMasterQuestions();
-    loadExamLanguages();
+    loadMasterQuestions().then(function() {
+      if (pageData) {
+        loadExamLanguages();
+      }
+    });
   </script>
 </body>
 </html>
