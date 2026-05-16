@@ -825,6 +825,21 @@
       });
     }
 
+
+    function getCollapsedStateByCategoryCode() {
+      const state = {};
+
+      if (!pageData || !pageData.categories) {
+        return state;
+      }
+
+      pageData.categories.forEach(function(category) {
+        state[category.category_code] = !!category._collapsed;
+      });
+
+      return state;
+    }
+
     function getNextQNo() {
       let maxQNo = 0;
       (pageData.categories || []).forEach(function(category) {
@@ -1373,6 +1388,7 @@
             "Category saved: " + category.category_code +
             "\nSaved count: " + ((result.data && result.data.saved_count) || 0)
           );
+          category._collapsed = true;
           await loadMasterQuestions();
         } else {
           showPageMessage("error", result.message || "Error saving category");
@@ -1425,16 +1441,22 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
 
         isReadOnly = String(urlParams.exam_status || "").toLowerCase() !== "draft";
 
+        const previousCollapsedState = getCollapsedStateByCategoryCode();
+
         pageData = {
           exam_id: result.data.exam_id || "",
           exam_title: result.data.exam_title || "",
           question_count: result.data.question_count || 0,
           categories: (result.data.categories || []).map(function(category) {
+            const categoryCode = category.category_code || "";
+
             return {
-              category_code: category.category_code || "",
+              category_code: categoryCode,
               category_label: category.category_label || category.category_code || "",
               sort_order: category.sort_order || 0,
-              _collapsed: false,
+              _collapsed: Object.prototype.hasOwnProperty.call(previousCollapsedState, categoryCode)
+                ? previousCollapsedState[categoryCode]
+                : true,
               _dirty: false,
               questions: (category.questions || []).map(normaliseQuestion)
             };
