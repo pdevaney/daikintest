@@ -616,6 +616,49 @@ function isExamInTranslation(exam) {
       });
     }
 
+
+    function getCollapsedStateByCategoryCode() {
+      const state = {};
+
+      if (!pageData || !pageData.categories) {
+        return state;
+      }
+
+      pageData.categories.forEach(function(category) {
+        state[category.category_code] = !!category._collapsed;
+      });
+
+      return state;
+    }
+
+    function categoryHasEditableQuestions(category) {
+      return (category.questions || []).some(function(question) {
+        return question.is_editable !== false;
+      });
+    }
+
+    function setInitialCategoryOpenState() {
+      if (!pageData || !pageData.categories || !pageData.categories.length) {
+        return;
+      }
+
+      const hasPreviouslyOpenedCategory = pageData.categories.some(function(category) {
+        return category._collapsed === false;
+      });
+
+      if (hasPreviouslyOpenedCategory) {
+        return;
+      }
+
+      const firstEditableCategory = pageData.categories.find(function(category) {
+        return categoryHasEditableQuestions(category);
+      });
+
+      if (firstEditableCategory) {
+        firstEditableCategory._collapsed = false;
+      }
+    }
+
     function normaliseQuestion(question, languageStatus) {
   const status = String(languageStatus || "").toLowerCase();
   const statusLocksEditing =
@@ -758,7 +801,12 @@ function isExamInTranslation(exam) {
       }
 
       if (metaEl) {
-        metaEl.textContent = "Code: " + (category.category_code || "") + " • Questions: " + (category.questions || []).length;
+        const questionCount = (category.questions || []).length;
+        metaEl.textContent =
+          "Code: " + (category.category_code || "") +
+          " • " + questionCount +
+          " " + (questionCount === 1 ? "question" : "questions") +
+          " to translate";
       }
     }
 
@@ -788,7 +836,7 @@ function isExamInTranslation(exam) {
                   </span>
                 </div>
                 <div class="category-meta" data-category-meta="${categoryIndex}">
-                  Code: ${escapeHtml(category.category_code || "")} • Questions: ${questions.length}
+                  Code: ${escapeHtml(category.category_code || "")} • ${questions.length} ${questions.length === 1 ? "question" : "questions"} to translate
                 </div>
               </div>
 
@@ -1008,6 +1056,7 @@ function isExamInTranslation(exam) {
             (languageStatus ? "\nLanguage status: " + languageStatus : "")
           );
 
+          category._collapsed = true;
           await loadTranslationWorkspace(pageData.exam.exam_id, pageData.language.lang_code);
         } else {
           showPageMessage("error", result.message || "Error saving translations");
@@ -1102,23 +1151,35 @@ if (!isExamInTranslation(selectedExam)) {
           return;
         }
 
+        const previousCollapsedState = getCollapsedStateByCategoryCode();
+
         pageData = {
           exam: result.data.exam || {},
           language: result.data.language || { lang_code: langCode },
           scope: result.data.scope || {},
-          categories: (result.data.categories || []).map(function(category) {
-            return {
-              name: category.name || category.category_code || "",
-              category_code: category.category_code || "",
-              sort_order: category.sort_order || 0,
-              _collapsed: false,
-              _dirty: false,
-              questions: (category.questions || []).map(function(question) {
-                return normaliseQuestion(question, (result.data.language && result.data.language.status) || "");
+          categories: (result.data.categories || [])
+            .map(function(category) {
+              const categoryCode = category.category_code || "";
+
+              return {
+                name: category.name || category.category_code || "",
+                category_code: categoryCode,
+                sort_order: category.sort_order || 0,
+                _collapsed: previousCollapsedState.hasOwnProperty(categoryCode)
+                  ? previousCollapsedState[categoryCode]
+                  : true,
+                _dirty: false,
+                questions: (category.questions || []).map(function(question) {
+                  return normaliseQuestion(question, (result.data.language && result.data.language.status) || "");
+                })
+              };
             })
-            };
-          })
+            .filter(function(category) {
+              return (category.questions || []).length > 0;
+            })
         };
+
+        setInitialCategoryOpenState();
             const languageStatus = String((pageData.language && pageData.language.status) || "").toLowerCase();
             qs("submitBtn").disabled =
               languageStatus === "submitted" ||
