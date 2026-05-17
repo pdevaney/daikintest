@@ -1140,8 +1140,14 @@
               </div>
             `;
           } else if (publicationStatus === "published") {
-            actionsHtml = '<span class="muted-note">Published' + versionText + '</span>';
-          } else if (publicationStatus === "failed" || publicationStatus === "publish_failed") {
+  actionsHtml = `
+    <div class="languages-actions">
+      <button type="button" class="small publish-language-btn" data-lang-code="${escapeHtml(language.lang_code)}">
+        Publish new version
+      </button>
+    </div>
+  `;
+} else if (publicationStatus === "failed" || publicationStatus === "publish_failed") {
             actionsHtml = `
               <div class="languages-actions">
                 <button type="button" class="small publish-language-btn" data-lang-code="${escapeHtml(language.lang_code)}">Retry publish</button>
