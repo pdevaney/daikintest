@@ -1565,7 +1565,20 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
           showLanguagesMessage("success", result.message || ("Language published: " + langCode));
           await loadExamLanguages();
         } else {
-          showLanguagesMessage("error", result.message || ("Could not publish language: " + langCode));
+            const msg =
+            result.message ||
+            result.error_message ||
+            ("Could not publish language: " + langCode);
+
+          if (String(msg).toLowerCase().indexOf("timeout") !== -1) {
+            showLanguagesMessage(
+              "error",
+              "Publishing may still be running. Please click Refresh in a moment to check the language status."
+            );
+            return;
+          }
+
+          showLanguagesMessage("error", msg);
         }
       } catch (err) {
         showLanguagesMessage("error", "API error while publishing language");
