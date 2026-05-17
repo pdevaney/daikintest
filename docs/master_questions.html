@@ -1552,6 +1552,20 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
       const confirmed = confirm("Publish language " + langCode + "?");
       if (!confirmed) return;
 
+      const button = document.querySelector(
+        '.publish-language-btn[data-lang-code="' + CSS.escape(langCode) + '"]'
+      );
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Publishing...";
+      }
+
+      showLanguagesMessage(
+        "success",
+        "Publishing has started. This process may take a few minutes. Please wait..."
+      );
+
       try {
         const response = await fetch(getPublishLanguageEndpoint(urlParams.exam_id, langCode), {
           method: "POST",
@@ -1559,20 +1573,42 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
           body: JSON.stringify(buildFlatPayload("publish_language"))
         });
 
-        const result = await response.json();
+        const rawText = await response.text();
+        let result = {};
 
-        if (response.ok && result.status === "SUCCESS") {
+        try {
+          result = rawText ? JSON.parse(rawText) : {};
+        } catch (e) {
+          const rawMessage = String(rawText || "").trim();
+
+          if (rawMessage.toLowerCase().indexOf("timeout") !== -1) {
+            showLanguagesMessage(
+              "success",
+              "Publishing may still be running. Please click Refresh in a moment to check the language status."
+            );
+            return;
+          }
+
+          showLanguagesMessage(
+            "error",
+            rawMessage || "Could not publish language: " + langCode
+          );
+          console.error("Invalid publish response:", rawText);
+          return;
+        }
+
+        if (response.ok && String(result.status || "").toLowerCase() === "success") {
           showLanguagesMessage("success", result.message || ("Language published: " + langCode));
           await loadExamLanguages();
         } else {
-            const msg =
+          const msg =
             result.message ||
             result.error_message ||
             ("Could not publish language: " + langCode);
 
           if (String(msg).toLowerCase().indexOf("timeout") !== -1) {
             showLanguagesMessage(
-              "error",
+              "success",
               "Publishing may still be running. Please click Refresh in a moment to check the language status."
             );
             return;
@@ -1581,8 +1617,16 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
           showLanguagesMessage("error", msg);
         }
       } catch (err) {
-        showLanguagesMessage("error", "API error while publishing language");
+        showLanguagesMessage(
+          "error",
+          "API error while publishing language. Please click Refresh in a moment to check whether the language status changed."
+        );
         console.error(err);
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = "Publish";
+        }
       }
     }
 
