@@ -428,6 +428,18 @@
       color: #15552e;
     }
 
+    .pill-publishing {
+      background: #fff6dd;
+      border-color: #f3dfa4;
+      color: #6a5200;
+    }
+
+    .pill-failed {
+      background: #fff2f2;
+      border-color: #f0c8c8;
+      color: #b00020;
+    }
+
     .pill-default {
       background: #ffffff;
       border-color: #dddddd;
@@ -622,13 +634,14 @@
             <thead>
               <tr>
                 <th style="width: 180px;">Language</th>
-                <th style="width: 180px;">Status</th>
+                <th style="width: 160px;">Translation status</th>
+                <th style="width: 180px;">Publication status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="languagesTableBody">
               <tr>
-                <td colspan="3">Loading languages…</td>
+                <td colspan="4">Loading languages…</td>
               </tr>
             </tbody>
           </table>
@@ -867,6 +880,8 @@
     function getStatusPillClass(status) {
       const s = String(status || "").toLowerCase();
       if (s === "published") return "pill-published";
+      if (s === "publishing") return "pill-publishing";
+      if (s === "failed" || s === "publish_failed") return "pill-failed";
       if (s === "approved") return "pill-approved";
       if (s === "submitted") return "pill-submitted";
       if (s === "in_translation") return "pill-translation";
@@ -897,7 +912,7 @@
       }
 
       const total = examLanguages.length;
-      const published = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "published"; }).length;
+      const published = examLanguages.filter(function(l) { return String(l.publication_status || l.status || "").toLowerCase() === "published"; }).length;
       const approved = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "approved"; }).length;
       const submitted = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "submitted"; }).length;
 
@@ -1085,7 +1100,7 @@
     function renderLanguagesModal() {
       const tbody = qs("languagesTableBody");
       const total = examLanguages.length;
-      const published = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "published"; }).length;
+      const published = examLanguages.filter(function(l) { return String(l.publication_status || l.status || "").toLowerCase() === "published"; }).length;
       const approved = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "approved"; }).length;
       const submitted = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "submitted"; }).length;
       const inTranslation = examLanguages.filter(function(l) { return String(l.status || "").toLowerCase() === "in_translation"; }).length;
@@ -1098,12 +1113,16 @@
       qs("languagesModalSubhead").textContent = (pageData ? pageData.exam_title : "") + " (" + (urlParams.exam_id || "") + ")";
 
       if (!examLanguages.length) {
-        tbody.innerHTML = '<tr><td colspan="3">No languages found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">No languages found.</td></tr>';
         return;
       }
 
       tbody.innerHTML = examLanguages.map(function(language) {
         const status = String(language.status || "").toLowerCase();
+        const publicationStatus = String(language.publication_status || "").toLowerCase();
+        const publicationLabel = language.publication_status || "not_published";
+        const version = language.published_version || language.publication_version || language.version || "";
+        const versionText = version ? " v" + escapeHtml(version) : "";
         let actionsHtml = '<span class="muted-note">—</span>';
 
         if (status === "submitted") {
@@ -1114,17 +1133,34 @@
             </div>
           `;
         } else if (status === "approved") {
-          actionsHtml = `
-            <div class="languages-actions">
-              <button type="button" class="small publish-language-btn" data-lang-code="${escapeHtml(language.lang_code)}">Publish</button>
-            </div>
-          `;
+          if (publicationStatus === "publishing") {
+            actionsHtml = `
+              <div class="languages-actions">
+                <button type="button" class="small publish-language-btn" data-lang-code="${escapeHtml(language.lang_code)}" disabled>Publishing...</button>
+              </div>
+            `;
+          } else if (publicationStatus === "published") {
+            actionsHtml = '<span class="muted-note">Published' + versionText + '</span>';
+          } else if (publicationStatus === "failed" || publicationStatus === "publish_failed") {
+            actionsHtml = `
+              <div class="languages-actions">
+                <button type="button" class="small publish-language-btn" data-lang-code="${escapeHtml(language.lang_code)}">Retry publish</button>
+              </div>
+            `;
+          } else {
+            actionsHtml = `
+              <div class="languages-actions">
+                <button type="button" class="small publish-language-btn" data-lang-code="${escapeHtml(language.lang_code)}">Publish</button>
+              </div>
+            `;
+          }
         }
 
         return `
           <tr>
             <td><strong>${escapeHtml(language.lang_code || "")}</strong></td>
             <td><span class="pill ${getStatusPillClass(language.status)}">${escapeHtml(language.status || "")}</span></td>
+            <td><span class="pill ${getStatusPillClass(publicationLabel)}">${escapeHtml(publicationLabel)}${versionText}</span></td>
             <td>${actionsHtml}</td>
           </tr>
         `;
@@ -1474,7 +1510,7 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
     async function loadExamLanguages() {
       try {
         clearLanguagesMessage();
-        qs("languagesTableBody").innerHTML = '<tr><td colspan="3">Loading languages…</td></tr>';
+        qs("languagesTableBody").innerHTML = '<tr><td colspan="4">Loading languages…</td></tr>';
 
         const response = await fetch(getLanguagesEndpoint(urlParams.exam_id), {
           method: "POST",
@@ -1563,7 +1599,7 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
 
       showLanguagesMessage(
         "success",
-        "Publishing has started. This process may take a few minutes. Please wait..."
+        "Publishing has started for " + langCode + ". This process may take a few minutes. Click Refresh to check the latest status."
       );
 
       try {
@@ -1584,8 +1620,9 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
           if (rawMessage.toLowerCase().indexOf("timeout") !== -1) {
             showLanguagesMessage(
               "success",
-              "Publishing may still be running. Please click Refresh in a moment to check the language status."
+              "Publishing may still be running. Click Refresh in a moment to check the publication status."
             );
+            markLanguagePublishing(langCode);
             return;
           }
 
@@ -1598,8 +1635,16 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
         }
 
         if (response.ok && String(result.status || "").toLowerCase() === "success") {
-          showLanguagesMessage("success", result.message || ("Language published: " + langCode));
-          await loadExamLanguages();
+          const data = result.data || {};
+          updateLanguageFromPublishResponse(langCode, data);
+          renderLanguagesModal();
+          updateSummary();
+
+          showLanguagesMessage(
+            "success",
+            result.message ||
+            ("Publishing has started for " + langCode + ". Click Refresh to check the latest status.")
+          );
         } else {
           const msg =
             result.message ||
@@ -1609,8 +1654,9 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
           if (String(msg).toLowerCase().indexOf("timeout") !== -1) {
             showLanguagesMessage(
               "success",
-              "Publishing may still be running. Please click Refresh in a moment to check the language status."
+              "Publishing may still be running. Click Refresh in a moment to check the publication status."
             );
+            markLanguagePublishing(langCode);
             return;
           }
 
@@ -1619,15 +1665,32 @@ if (!response.ok || String(result.status || "").toLowerCase() !== "success") {
       } catch (err) {
         showLanguagesMessage(
           "error",
-          "API error while publishing language. Please click Refresh in a moment to check whether the language status changed."
+          "API error while publishing language. Please click Refresh in a moment to check whether the publication status changed."
         );
         console.error(err);
-      } finally {
-        if (button) {
-          button.disabled = false;
-          button.textContent = "Publish";
-        }
       }
+    }
+
+    function updateLanguageFromPublishResponse(langCode, data) {
+      examLanguages = examLanguages.map(function(language) {
+        if (String(language.lang_code || "") !== String(langCode || "")) {
+          return language;
+        }
+
+        return Object.assign({}, language, {
+          status: data.language_status || language.status,
+          publication_status: data.publication_status || language.publication_status || "publishing",
+          published_version: data.published_version || data.publication_version || language.published_version || language.publication_version || ""
+        });
+      });
+    }
+
+    function markLanguagePublishing(langCode) {
+      updateLanguageFromPublishResponse(langCode, {
+        publication_status: "publishing"
+      });
+      renderLanguagesModal();
+      updateSummary();
     }
 
     function openLanguagesModal() {
