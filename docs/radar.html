@@ -21,7 +21,7 @@
       margin: 0;
       padding: 24px;
       font-family: Arial, Helvetica, sans-serif;
-      background-color: #f5f7fa;
+      background: #f5f7fa;
       color: #263238;
     }
 
@@ -51,14 +51,14 @@
     .empty-panel {
       padding: 30px;
       text-align: center;
-      background-color: #ffffff;
+      background: #ffffff;
       border: 1px solid #dfe5ea;
       border-radius: 8px;
     }
 
     .error-panel {
       color: #b71c1c;
-      background-color: #fff5f5;
+      background: #fff5f5;
       border-color: #efc2c2;
     }
 
@@ -75,7 +75,7 @@
 
     .summary-card {
       padding: 20px;
-      background-color: #ffffff;
+      background: #ffffff;
       border: 1px solid #dfe5ea;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -96,6 +96,7 @@
       display: grid;
       grid-template-columns: 150px 1fr;
       row-gap: 8px;
+      column-gap: 12px;
       font-size: 14px;
     }
 
@@ -118,17 +119,17 @@
 
     .status-passed {
       color: #1b5e20;
-      background-color: #e8f5e9;
+      background: #e8f5e9;
     }
 
     .status-not-passed {
       color: #b71c1c;
-      background-color: #ffebee;
+      background: #ffebee;
     }
 
     .chart-card {
       padding: 24px;
-      background-color: #ffffff;
+      background: #ffffff;
       border: 1px solid #dfe5ea;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -174,7 +175,7 @@
     }
 
     .category-table th {
-      background-color: #f7f9fb;
+      background: #f7f9fb;
       font-weight: 600;
     }
 
@@ -205,6 +206,7 @@
 
 <body>
   <main class="page-container">
+
     <header class="page-header">
       <h1 id="pageTitle" class="page-title">
         Exam Results
@@ -221,7 +223,6 @@
 
     <section id="errorPanel" class="error-panel hidden">
       <strong>Unable to load the exam results.</strong>
-
       <div id="errorMessage" style="margin-top: 8px;"></div>
     </section>
 
@@ -230,7 +231,9 @@
     </section>
 
     <section id="resultsPanel" class="hidden">
+
       <div class="summary-grid">
+
         <article class="summary-card">
           <h2>Current exam</h2>
 
@@ -288,14 +291,16 @@
             </div>
           </div>
         </article>
+
       </div>
 
       <article class="chart-card">
+
         <div class="chart-header">
           <h2>Category results</h2>
 
           <p class="chart-description">
-            Comparison of the latest score with the previous score.
+            Comparison of the latest category scores with the previous scores.
           </p>
         </div>
 
@@ -305,6 +310,7 @@
 
         <div class="category-table-wrapper">
           <table class="category-table">
+
             <thead>
               <tr>
                 <th>Level</th>
@@ -315,52 +321,133 @@
             </thead>
 
             <tbody id="categoryTableBody"></tbody>
+
           </table>
         </div>
+
       </article>
+
     </section>
+
   </main>
 
   <script>
-    const API_TOKEN = "9f98ef3719fa6645943f8056f2b3a2c4dd8e7f20c92ccb83babfcd74a029104f";
-    const API_URL = "https://apim.workato.com/213564_daikinj/exam_management-v10/exams/radar";
-    const RADAR_SUBTYPE = "get_my_exam_radar";
+    /*
+     * ==========================================================
+     * WORKATO CONFIGURATION
+     * ==========================================================
+     *
+     * Replace both values below.
+     */
+
+    const API_URL =
+      "https://apim.workato.com/213564_daikinj/exam_management-v10/exams/radar";
+
+    const API_TOKEN =
+      "9f98ef3719fa6645943f8056f2b3a2c4dd8e7f20c92ccb83babfcd74a029104f";
+
+    /*
+     * The payload values expected by the Workato API recipe.
+     */
+    const FORM_TYPE = "exam_admin";
+    const FORM_SUBTYPE = "exams/radar";
 
     let radarChart = null;
 
-    document.addEventListener("DOMContentLoaded", initialisePage);
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialisePage
+    );
 
     async function initialisePage() {
       try {
+        validateConfiguration();
+
         const iframeParameters = getIframeParameters();
 
-        validateAuthenticationParameters(iframeParameters);
+        validateAuthenticationParameters(
+          iframeParameters
+        );
 
-        const apiResult = await retrieveExamResults(iframeParameters);
+        const apiResult = await retrieveExamResults(
+          iframeParameters
+        );
+
         const data = extractResponseData(apiResult);
 
         renderResults(data);
       } catch (error) {
-        console.error("Radar chart error:", error);
+        console.error(
+          "Unable to display radar chart:",
+          error
+        );
+
         showError(error.message);
       }
     }
 
+    /*
+     * Check that the Workato URL and token have been supplied.
+     */
+    function validateConfiguration() {
+      if (
+        !API_URL ||
+        API_URL === "YOUR_WORKATO_API_ENDPOINT"
+      ) {
+        throw new Error(
+          "The Workato API URL has not been configured."
+        );
+      }
+
+      if (
+        !API_TOKEN ||
+        API_TOKEN === "YOUR_WORKATO_API_TOKEN"
+      ) {
+        throw new Error(
+          "The Workato API token has not been configured."
+        );
+      }
+    }
+
+    /*
+     * Read authentication values supplied in the iframe URL.
+     *
+     * Example:
+     *
+     * ?user_id=123
+     * &username=user@example.com
+     * &auth_code=abc
+     * &hash=xyz
+     * &iframe_src=https%3A%2F%2Fexample.com
+     */
     function getIframeParameters() {
-      const searchParameters = new URLSearchParams(
-        window.location.search
-      );
+      const searchParameters =
+        new URLSearchParams(window.location.search);
 
       return {
-        user_id: searchParameters.get("user_id") || "",
-        username: searchParameters.get("username") || "",
-        auth_code: searchParameters.get("auth_code") || "",
-        hash: searchParameters.get("hash") || "",
-        iframe_src: searchParameters.get("iframe_src") || ""
+        user_id:
+          searchParameters.get("user_id") || "",
+
+        username:
+          searchParameters.get("username") || "",
+
+        auth_code:
+          searchParameters.get("auth_code") || "",
+
+        hash:
+          searchParameters.get("hash") || "",
+
+        iframe_src:
+          searchParameters.get("iframe_src") || ""
       };
     }
 
-    function validateAuthenticationParameters(parameters) {
+    /*
+     * Ensure the required iframe authentication parameters exist.
+     */
+    function validateAuthenticationParameters(
+      parameters
+    ) {
       const missingParameters = [];
 
       if (!parameters.user_id) {
@@ -387,38 +474,94 @@
       }
     }
 
-    async function retrieveExamResults(iframeParameters) {
+    /*
+     * Call the Workato API.
+     *
+     * The Workato access-profile Auth Token is supplied in
+     * the api-token HTTP header.
+     */
+    async function retrieveExamResults(
+      iframeParameters
+    ) {
       const requestPayload = {
-        form_type: "exam_admin",
-        form_subtype: "exams/radar",
+        form_type: FORM_TYPE,
+        form_subtype: FORM_SUBTYPE,
         iframe_params: iframeParameters
       };
 
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify(requestPayload)
-      });
+      console.log(
+        "Sending Workato request:",
+        requestPayload
+      );
 
-      let result;
+      let response;
 
       try {
-        result = await response.json();
+        response = await fetch(API_URL, {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "api-token": API_TOKEN
+          },
+
+          body: JSON.stringify(requestPayload)
+        });
       } catch (error) {
         throw new Error(
-          "The API returned a response that was not valid JSON."
+          "The browser was unable to contact the Workato API. " +
+          "Check the endpoint URL, network connection and CORS configuration."
         );
       }
 
+      const responseText = await response.text();
+
+      let result = null;
+
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText);
+        } catch (error) {
+          console.error(
+            "Non-JSON API response:",
+            responseText
+          );
+
+          throw new Error(
+            `The API returned HTTP ${response.status}, ` +
+            "but its response was not valid JSON."
+          );
+        }
+      }
+
       if (!response.ok) {
+        console.error(
+          "Workato API error response:",
+          result
+        );
+
         const apiMessage =
           result?.response?.error_message ||
           result?.response?.message ||
           result?.error_message ||
           result?.message;
+
+        if (response.status === 401) {
+          throw new Error(
+            apiMessage ||
+            "Workato returned HTTP 401. Check that the API token " +
+            "is correct, active and authorised for this API collection."
+          );
+        }
+
+        if (response.status === 403) {
+          throw new Error(
+            apiMessage ||
+            "Workato returned HTTP 403. The API client is authenticated " +
+            "but does not have permission to call this endpoint."
+          );
+        }
 
         throw new Error(
           apiMessage ||
@@ -426,23 +569,33 @@
         );
       }
 
+      if (!result) {
+        throw new Error(
+          "The Workato API returned an empty response."
+        );
+      }
+
       return result;
     }
 
+    /*
+     * Extract data from this response structure:
+     *
+     * {
+     *   "http_status_code": "200",
+     *   "response": {
+     *     "status": "success",
+     *     "message": "success",
+     *     "data": {
+     *       "categories": [],
+     *       "current_exam": {},
+     *       "previous_exam": {},
+     *       "pillar": {}
+     *     }
+     *   }
+     * }
+     */
     function extractResponseData(result) {
-      /*
-       * The response currently has this structure:
-       *
-       * {
-       *   "http_status_code": "200",
-       *   "response": {
-       *     "status": "success",
-       *     "message": "success",
-       *     "data": { ... }
-       *   }
-       * }
-       */
-
       const statusCode = String(
         result?.http_status_code ?? ""
       );
@@ -451,7 +604,10 @@
         result?.response?.status ?? ""
       ).toLowerCase();
 
-      if (statusCode && statusCode !== "200") {
+      if (
+        statusCode &&
+        statusCode !== "200"
+      ) {
         throw new Error(
           result?.response?.error_message ||
           result?.response?.message ||
@@ -469,7 +625,10 @@
 
       const data = result?.response?.data;
 
-      if (!data || typeof data !== "object") {
+      if (
+        !data ||
+        typeof data !== "object"
+      ) {
         throw new Error(
           "The API response did not contain a data object."
         );
@@ -478,27 +637,53 @@
       return data;
     }
 
+    /*
+     * Render the complete page.
+     */
     function renderResults(data) {
-      const categories = Array.isArray(data.categories)
-        ? data.categories
-        : [];
+      const categories =
+        Array.isArray(data.categories)
+          ? data.categories
+          : [];
 
       if (categories.length === 0) {
         showEmpty();
         return;
       }
 
-      const sortedCategories = sortCategories(categories);
+      const sortedCategories =
+        sortCategories(categories);
 
-      const currentExam = data.current_exam || {};
-      const previousExam = data.previous_exam || {};
-      const pillar = data.pillar || {};
+      const currentExam =
+        data.current_exam || {};
+
+      const previousExam =
+        data.previous_exam || {};
+
+      const pillar =
+        data.pillar || {};
 
       renderHeader(pillar);
-      renderExamCard("current", currentExam);
-      renderExamCard("previous", previousExam);
-      renderRadarChart(sortedCategories, currentExam, previousExam);
-      renderCategoryTable(sortedCategories);
+
+      renderExamCard(
+        "current",
+        currentExam
+      );
+
+      renderExamCard(
+        "previous",
+        previousExam
+      );
+
+      renderRadarChart(
+        sortedCategories,
+        currentExam,
+        previousExam
+      );
+
+      renderCategoryTable(
+        sortedCategories
+      );
 
       document
         .getElementById("loadingPanel")
@@ -522,11 +707,14 @@
         normaliseText(pillar.pillar_name) ||
         "Exam Results";
 
-      document.getElementById("pageTitle").textContent =
-        pillarName;
+      document
+        .getElementById("pageTitle")
+        .textContent = pillarName;
 
-      document.getElementById("pageSubtitle").textContent =
-        "Assessment performance by category";
+      document
+        .getElementById("pageSubtitle")
+        .textContent =
+          "Assessment performance by category";
     }
 
     function renderExamCard(prefix, exam) {
@@ -542,7 +730,8 @@
 
       setText(
         `${prefix}ExamLevel`,
-        exam.level_name || exam.level_code
+        exam.level_name ||
+        exam.level_code
       );
 
       setText(
@@ -561,6 +750,11 @@
       );
     }
 
+    /*
+     * Render the radar chart.
+     *
+     * There is deliberately no pass-mark dataset.
+     */
     function renderRadarChart(
       categories,
       currentExam,
@@ -576,25 +770,41 @@
           normaliseText(category.level_name) ||
           normaliseText(category.level_code);
 
-        return levelName
-          ? `${categoryName} (${levelName})`
-          : categoryName;
+        if (levelName) {
+          return [
+            levelName,
+            categoryName
+          ];
+        }
+
+        return categoryName;
       });
 
-      const currentScores = categories.map(category =>
-        toChartNumber(category.score)
-      );
+      const currentScores =
+        categories.map(category =>
+          toChartNumber(category.score)
+        );
 
-      const previousScores = categories.map(category =>
-        toChartNumber(category.last_score)
-      );
+      const previousScores =
+        categories.map(category =>
+          toChartNumber(category.last_score)
+        );
 
       const datasets = [
         {
           label:
             normaliseText(currentExam.exam_name) ||
             "Current score",
+
           data: currentScores,
+
+          borderColor: "rgba(37, 99, 235, 1)",
+          backgroundColor: "rgba(37, 99, 235, 0.18)",
+          pointBackgroundColor: "rgba(37, 99, 235, 1)",
+          pointBorderColor: "#ffffff",
+          pointHoverBackgroundColor: "#ffffff",
+          pointHoverBorderColor: "rgba(37, 99, 235, 1)",
+
           borderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
@@ -602,9 +812,10 @@
         }
       ];
 
-      const hasPreviousScores = categories.some(category =>
-        hasNumericValue(category.last_score)
-      );
+      const hasPreviousScores =
+        categories.some(category =>
+          hasNumericValue(category.last_score)
+        );
 
       if (hasPreviousScores) {
         datasets.push({
@@ -612,7 +823,16 @@
             normaliseText(previousExam.exam_name) ||
             getPreviousScoreLabel(categories) ||
             "Previous score",
+
           data: previousScores,
+
+          borderColor: "rgba(234, 88, 12, 1)",
+          backgroundColor: "rgba(234, 88, 12, 0.12)",
+          pointBackgroundColor: "rgba(234, 88, 12, 1)",
+          pointBorderColor: "#ffffff",
+          pointHoverBackgroundColor: "#ffffff",
+          pointHoverBorderColor: "rgba(234, 88, 12, 1)",
+
           borderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
@@ -620,8 +840,11 @@
         });
       }
 
-      const canvas = document.getElementById("radarChart");
-      const context = canvas.getContext("2d");
+      const canvas =
+        document.getElementById("radarChart");
+
+      const context =
+        canvas.getContext("2d");
 
       if (radarChart) {
         radarChart.destroy();
@@ -650,9 +873,18 @@
               max: 100,
               beginAtZero: true,
 
+              angleLines: {
+                display: true
+              },
+
+              grid: {
+                circular: false
+              },
+
               ticks: {
                 stepSize: 20,
                 backdropColor: "transparent",
+
                 callback: function(value) {
                   return `${value}%`;
                 }
@@ -661,10 +893,6 @@
               pointLabels: {
                 font: {
                   size: 12
-                },
-
-                callback: function(label) {
-                  return wrapChartLabel(label, 24);
                 }
               }
             }
@@ -691,7 +919,9 @@
                       ? "No score"
                       : `${context.raw}%`;
 
-                  return `${context.dataset.label}: ${value}`;
+                  return (
+                    `${context.dataset.label}: ${value}`
+                  );
                 }
               }
             }
@@ -702,20 +932,27 @@
 
     function renderCategoryTable(categories) {
       const tableBody =
-        document.getElementById("categoryTableBody");
+        document.getElementById(
+          "categoryTableBody"
+        );
 
       tableBody.innerHTML = "";
 
       categories.forEach(category => {
-        const row = document.createElement("tr");
+        const row =
+          document.createElement("tr");
 
-        const levelCell = document.createElement("td");
+        const levelCell =
+          document.createElement("td");
+
         levelCell.textContent =
           normaliseText(category.level_name) ||
           normaliseText(category.level_code) ||
           "—";
 
-        const categoryCell = document.createElement("td");
+        const categoryCell =
+          document.createElement("td");
+
         categoryCell.textContent =
           normaliseText(category.category_name) ||
           normaliseText(category.category_code) ||
@@ -725,6 +962,7 @@
           document.createElement("td");
 
         currentScoreCell.className = "number";
+
         currentScoreCell.textContent =
           formatScore(category.score);
 
@@ -732,6 +970,7 @@
           document.createElement("td");
 
         previousScoreCell.className = "number";
+
         previousScoreCell.textContent =
           formatScore(category.last_score);
 
@@ -745,38 +984,56 @@
     }
 
     function sortCategories(categories) {
-      return [...categories].sort((first, second) => {
-        const firstLevel =
-          toSortNumber(first.level_sort_order);
+      return [...categories].sort(
+        (first, second) => {
+          const firstLevel =
+            toSortNumber(
+              first.level_sort_order
+            );
 
-        const secondLevel =
-          toSortNumber(second.level_sort_order);
+          const secondLevel =
+            toSortNumber(
+              second.level_sort_order
+            );
 
-        if (firstLevel !== secondLevel) {
-          return firstLevel - secondLevel;
-        }
+          if (firstLevel !== secondLevel) {
+            return firstLevel - secondLevel;
+          }
 
-        const firstCategory =
-          toSortNumber(first.category_sort_order);
+          const firstCategory =
+            toSortNumber(
+              first.category_sort_order
+            );
 
-        const secondCategory =
-          toSortNumber(second.category_sort_order);
+          const secondCategory =
+            toSortNumber(
+              second.category_sort_order
+            );
 
-        if (firstCategory !== secondCategory) {
-          return firstCategory - secondCategory;
-        }
+          if (
+            firstCategory !== secondCategory
+          ) {
+            return (
+              firstCategory - secondCategory
+            );
+          }
 
-        return String(first.category_name || "")
-          .localeCompare(
-            String(second.category_name || "")
+          return String(
+            first.category_name || ""
+          ).localeCompare(
+            String(
+              second.category_name || ""
+            )
           );
-      });
+        }
+      );
     }
 
     function getPreviousScoreLabel(categories) {
-      const categoryWithLabel = categories.find(category =>
-        normaliseText(category.last_label)
-      );
+      const categoryWithLabel =
+        categories.find(category =>
+          normaliseText(category.last_label)
+        );
 
       return categoryWithLabel
         ? categoryWithLabel.last_label
@@ -784,7 +1041,8 @@
     }
 
     function setText(elementId, value) {
-      const element = document.getElementById(elementId);
+      const element =
+        document.getElementById(elementId);
 
       if (!element) {
         return;
@@ -794,8 +1052,12 @@
         normaliseText(value) || "—";
     }
 
-    function setResultBadge(elementId, passed) {
-      const element = document.getElementById(elementId);
+    function setResultBadge(
+      elementId,
+      passed
+    ) {
+      const element =
+        document.getElementById(elementId);
 
       if (!element) {
         return;
@@ -808,13 +1070,17 @@
 
       if (passed === true) {
         element.textContent = "Passed";
-        element.classList.add("status-passed");
+        element.classList.add(
+          "status-passed"
+        );
         return;
       }
 
       if (passed === false) {
         element.textContent = "Not passed";
-        element.classList.add("status-not-passed");
+        element.classList.add(
+          "status-not-passed"
+        );
         return;
       }
 
@@ -840,13 +1106,16 @@
         return String(value);
       }
 
-      return new Intl.DateTimeFormat("en-NZ", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      }).format(date);
+      return new Intl.DateTimeFormat(
+        "en-NZ",
+        {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      ).format(date);
     }
 
     function normaliseText(value) {
@@ -876,7 +1145,10 @@
 
       const number = Number(value);
 
-      return Math.max(0, Math.min(100, number));
+      return Math.max(
+        0,
+        Math.min(100, number)
+      );
     }
 
     function toSortNumber(value) {
@@ -885,34 +1157,6 @@
       }
 
       return Number(value);
-    }
-
-    function wrapChartLabel(label, maximumLength) {
-      const words = String(label).split(" ");
-      const lines = [];
-      let currentLine = "";
-
-      words.forEach(word => {
-        const proposedLine = currentLine
-          ? `${currentLine} ${word}`
-          : word;
-
-        if (
-          proposedLine.length > maximumLength &&
-          currentLine
-        ) {
-          lines.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine = proposedLine;
-        }
-      });
-
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-
-      return lines;
     }
 
     function showError(message) {
@@ -932,8 +1176,11 @@
         .getElementById("errorPanel")
         .classList.remove("hidden");
 
-      document.getElementById("errorMessage").textContent =
-        message || "An unexpected error occurred.";
+      document
+        .getElementById("errorMessage")
+        .textContent =
+          message ||
+          "An unexpected error occurred.";
     }
 
     function showEmpty() {
