@@ -1,785 +1,960 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>My Exam Radar</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Exam Results</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    :root {
-      --bg: #f6f6f6;
-      --card: #ffffff;
-      --border: #dddddd;
-      --muted: #666666;
-      --header: #fafafa;
-      --primary: #005eb8;
-      --primaryHover: #004a92;
-      --secondary: #666666;
-      --secondaryHover: #555555;
-      --successBg: #e9f8ee;
-      --successBorder: #bfe6c9;
-      --successText: #15552e;
-      --errorBg: #fff2f2;
-      --errorBorder: #f0c8c8;
-      --errorText: #b00020;
-      --shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-      --passColor: #d12c2c;
-      --previousColor: #888888;
-      --currentColor: #005eb8;
-    }
-
     * {
       box-sizing: border-box;
     }
 
     body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 24px;
-      background: var(--bg);
-      color: #222;
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #f5f7fa;
+      color: #263238;
     }
 
-    .card {
-      background: var(--card);
-      padding: 20px;
-      border-radius: 8px;
+    .page-container {
       max-width: 1200px;
       margin: 0 auto;
-      box-shadow: var(--shadow);
     }
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
+    .page-header {
+      margin-bottom: 24px;
     }
 
-    h1 {
+    .page-title {
+      margin: 0 0 6px;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .page-subtitle {
       margin: 0;
-      font-size: 24px;
-    }
-
-    .subhead {
-      color: var(--muted);
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    .top-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    button {
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      padding: 10px 14px;
-      font-size: 14px;
-      color: #fff;
-      background: var(--primary);
-    }
-
-    button:hover {
-      background: var(--primaryHover);
-    }
-
-    button.secondary {
-      background: var(--secondary);
-    }
-
-    button.secondary:hover {
-      background: var(--secondaryHover);
-    }
-
-    .message {
-      margin-bottom: 14px;
-      padding: 10px 12px;
-      border-radius: 6px;
-      display: none;
-      font-size: 13px;
-      line-height: 1.4;
-      white-space: pre-wrap;
-    }
-
-    .message.error {
-      display: block;
-      background: var(--errorBg);
-      border: 1px solid var(--errorBorder);
-      color: var(--errorText);
-    }
-
-    .summary-bar {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(160px, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #fff;
-    }
-
-    .summary-item {
-      font-size: 13px;
-      color: #444;
-    }
-
-    .summary-item strong {
-      display: block;
-      color: #222;
-      margin-bottom: 4px;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-    }
-
-    .main-grid {
-      display: grid;
-      grid-template-columns: minmax(320px, 1.2fr) minmax(320px, 0.8fr);
-      gap: 18px;
-      align-items: start;
-    }
-
-    .panel {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #fff;
-      overflow: hidden;
-    }
-
-    .panel-header {
-      padding: 12px 14px;
-      background: var(--header);
-      border-bottom: 1px solid #e6e6e6;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .panel-body {
-      padding: 16px;
-    }
-
-    .chart-wrap {
-      width: 100%;
-      overflow: auto;
-    }
-
-    .chart-holder {
-      min-height: 620px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .legend {
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-      font-size: 13px;
-      color: #444;
-    }
-
-    .legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .legend-swatch {
-      width: 20px;
-      height: 3px;
-      border-radius: 2px;
-      display: inline-block;
-    }
-
-    .legend-swatch.pass {
-      background: var(--passColor);
-      border-top: 2px dashed var(--passColor);
-      height: 0;
-      width: 22px;
-    }
-
-    .legend-swatch.previous {
-      background: var(--previousColor);
-    }
-
-    .legend-swatch.current {
-      background: var(--currentColor);
-    }
-
-    .results-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .result-row {
-      border: 1px solid #e7e7e7;
-      border-radius: 8px;
-      padding: 12px;
-      background: #fff;
-    }
-
-    .result-row-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-
-    .result-title {
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .result-code {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .result-scores {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(70px, 1fr));
-      gap: 10px;
-      font-size: 13px;
-    }
-
-    .score-box {
-      background: #fafafa;
-      border: 1px solid #ececec;
-      border-radius: 6px;
-      padding: 8px;
-      text-align: center;
-    }
-
-    .score-box strong {
-      display: block;
-      font-size: 12px;
-      color: #555;
-      margin-bottom: 4px;
-    }
-
-    .score-box span {
+      color: #607d8b;
       font-size: 16px;
-      font-weight: 700;
-      color: #222;
     }
 
-    .pass-yes,
-    .pass-no {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .pass-yes {
-      background: #e9f8ee;
-      border: 1px solid #bfe6c9;
-      color: #15552e;
-    }
-
-    .pass-no {
-      background: #fff2f2;
-      border: 1px solid #f0c8c8;
-      color: #b00020;
-    }
-
-    .empty-note {
-      padding: 16px;
-      border: 1px dashed #d8d8d8;
+    .loading-panel,
+    .error-panel,
+    .empty-panel {
+      padding: 30px;
+      text-align: center;
+      background-color: #ffffff;
+      border: 1px solid #dfe5ea;
       border-radius: 8px;
-      color: #666;
-      background: #fafafa;
+    }
+
+    .error-panel {
+      color: #b71c1c;
+      background-color: #fff5f5;
+      border-color: #efc2c2;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      padding: 20px;
+      background-color: #ffffff;
+      border: 1px solid #dfe5ea;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .summary-card h2 {
+      margin: 0 0 16px;
+      font-size: 18px;
+    }
+
+    .exam-name {
+      margin-bottom: 14px;
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .exam-details {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      row-gap: 8px;
+      font-size: 14px;
+    }
+
+    .detail-label {
+      color: #607d8b;
+    }
+
+    .score {
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 14px;
       font-size: 13px;
+      font-weight: 600;
     }
 
-    @media (max-width: 980px) {
-      .main-grid {
-        grid-template-columns: 1fr;
-      }
+    .status-passed {
+      color: #1b5e20;
+      background-color: #e8f5e9;
+    }
 
-      .summary-bar {
-        grid-template-columns: repeat(2, minmax(140px, 1fr));
-      }
+    .status-not-passed {
+      color: #b71c1c;
+      background-color: #ffebee;
+    }
 
+    .chart-card {
+      padding: 24px;
+      background-color: #ffffff;
+      border: 1px solid #dfe5ea;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .chart-header {
+      margin-bottom: 20px;
+    }
+
+    .chart-header h2 {
+      margin: 0 0 5px;
+      font-size: 20px;
+    }
+
+    .chart-description {
+      margin: 0;
+      color: #607d8b;
+      font-size: 14px;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 620px;
+    }
+
+    .category-table-wrapper {
+      margin-top: 28px;
+      overflow-x: auto;
+    }
+
+    .category-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .category-table th,
+    .category-table td {
+      padding: 11px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5eaee;
+    }
+
+    .category-table th {
+      background-color: #f7f9fb;
+      font-weight: 600;
+    }
+
+    .category-table td.number,
+    .category-table th.number {
+      text-align: right;
+    }
+
+    @media (max-width: 800px) {
       body {
-        margin: 12px;
+        padding: 14px;
       }
-    }
 
-    @media (max-width: 640px) {
-      .summary-bar {
+      .summary-grid {
         grid-template-columns: 1fr;
+      }
+
+      .chart-wrapper {
+        height: 500px;
+      }
+
+      .exam-details {
+        grid-template-columns: 120px 1fr;
       }
     }
   </style>
 </head>
 
 <body>
-  <div class="card">
-    <div class="topbar">
-      <div>
-        <h1 id="pageTitle">My Exam Radar</h1>
-        <div class="subhead" id="pageSubhead">Loading current exam results…</div>
-      </div>
+  <main class="page-container">
+    <header class="page-header">
+      <h1 id="pageTitle" class="page-title">
+        Exam Results
+      </h1>
 
-      <div class="top-actions">
-        <button class="secondary" id="reloadBtn" type="button">Reload</button>
-      </div>
-    </div>
+      <p id="pageSubtitle" class="page-subtitle">
+        Loading assessment results...
+      </p>
+    </header>
 
-    <div id="pageMessage" class="message"></div>
+    <section id="loadingPanel" class="loading-panel">
+      Loading your exam results...
+    </section>
 
-    <div class="summary-bar" id="summaryBar">
-      <div class="summary-item">
-        <strong>Current exam</strong>
-        <span id="summaryCurrentExam">—</span>
-      </div>
-      <div class="summary-item">
-        <strong>Previous exam</strong>
-        <span id="summaryPreviousExam">—</span>
-      </div>
-      <div class="summary-item">
-        <strong>Overall score</strong>
-        <span id="summaryOverallScore">—</span>
-      </div>
-      <div class="summary-item">
-        <strong>Pass status</strong>
-        <span id="summaryPassStatus">—</span>
-      </div>
-    </div>
+    <section id="errorPanel" class="error-panel hidden">
+      <strong>Unable to load the exam results.</strong>
 
-    <div class="main-grid">
-      <div class="panel">
-        <div class="panel-header">Radar chart</div>
-        <div class="panel-body">
-          <div class="chart-wrap">
-            <div id="chartHolder" class="chart-holder"></div>
+      <div id="errorMessage" style="margin-top: 8px;"></div>
+    </section>
+
+    <section id="emptyPanel" class="empty-panel hidden">
+      No category results are available.
+    </section>
+
+    <section id="resultsPanel" class="hidden">
+      <div class="summary-grid">
+        <article class="summary-card">
+          <h2>Current exam</h2>
+
+          <div id="currentExamName" class="exam-name">
+            —
           </div>
 
-          <div class="legend">
-            <div class="legend-item">
-              <span class="legend-swatch pass"></span>
-              <span>Pass line</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-swatch previous"></span>
-              <span>Last exam</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-swatch current"></span>
-              <span>Current exam</span>
+          <div class="exam-details">
+            <div class="detail-label">Exam code</div>
+            <div id="currentExamCode">—</div>
+
+            <div class="detail-label">Level</div>
+            <div id="currentExamLevel">—</div>
+
+            <div class="detail-label">Completed</div>
+            <div id="currentExamCompleted">—</div>
+
+            <div class="detail-label">Overall score</div>
+            <div id="currentExamScore" class="score">—</div>
+
+            <div class="detail-label">Result</div>
+            <div>
+              <span id="currentExamResult" class="status-badge">
+                —
+              </span>
             </div>
           </div>
-        </div>
+        </article>
+
+        <article class="summary-card">
+          <h2>Previous exam</h2>
+
+          <div id="previousExamName" class="exam-name">
+            —
+          </div>
+
+          <div class="exam-details">
+            <div class="detail-label">Exam code</div>
+            <div id="previousExamCode">—</div>
+
+            <div class="detail-label">Level</div>
+            <div id="previousExamLevel">—</div>
+
+            <div class="detail-label">Completed</div>
+            <div id="previousExamCompleted">—</div>
+
+            <div class="detail-label">Overall score</div>
+            <div id="previousExamScore" class="score">—</div>
+
+            <div class="detail-label">Result</div>
+            <div>
+              <span id="previousExamResult" class="status-badge">
+                —
+              </span>
+            </div>
+          </div>
+        </article>
       </div>
 
-      <div class="panel">
-        <div class="panel-header">Category scores</div>
-        <div class="panel-body">
-          <div id="resultsList" class="results-list"></div>
+      <article class="chart-card">
+        <div class="chart-header">
+          <h2>Category results</h2>
+
+          <p class="chart-description">
+            Comparison of the latest score with the previous score.
+          </p>
         </div>
-      </div>
-    </div>
-  </div>
+
+        <div class="chart-wrapper">
+          <canvas id="radarChart"></canvas>
+        </div>
+
+        <div class="category-table-wrapper">
+          <table class="category-table">
+            <thead>
+              <tr>
+                <th>Level</th>
+                <th>Category</th>
+                <th class="number">Current score</th>
+                <th class="number">Previous score</th>
+              </tr>
+            </thead>
+
+            <tbody id="categoryTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
 
   <script>
-    const API_TOKEN = "9f98ef3719fa6645943f8056f2b3a2c4dd8e7f20c92ccb83babfcd74a029104f";
-    const RADAR_ENDPOINT = "https://apim.workato.com/213564_daikinj/exam_management-v10/exams/radar";
-    const RADAR_SUBTYPE = "get_my_exam_radar";
+    /*
+     * Replace this with your Workato API endpoint.
+     */
+    const API_URL =
+      "https://apim.workato.com/YOUR-ENDPOINT/exams/radar";
 
-    let pageData = null;
+    let radarChart = null;
 
-    function qs(id) {
-      return document.getElementById(id);
+    document.addEventListener("DOMContentLoaded", initialisePage);
+
+    async function initialisePage() {
+      try {
+        const iframeParameters = getIframeParameters();
+
+        validateAuthenticationParameters(iframeParameters);
+
+        const apiResult = await retrieveExamResults(iframeParameters);
+        const data = extractResponseData(apiResult);
+
+        renderResults(data);
+      } catch (error) {
+        console.error("Radar chart error:", error);
+        showError(error.message);
+      }
     }
 
-    function escapeHtml(str) {
-      return String(str == null ? "" : str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
+    function getIframeParameters() {
+      const searchParameters = new URLSearchParams(
+        window.location.search
+      );
 
-    function showPageMessage(type, text) {
-      const box = qs("pageMessage");
-      box.className = "message " + type;
-      box.textContent = text;
-    }
-
-    function clearPageMessage() {
-      const box = qs("pageMessage");
-      box.className = "message";
-      box.textContent = "";
-    }
-
-    function getUrlParams() {
-      const params = new URLSearchParams(window.location.search);
       return {
-        user_id: params.get("user_id") || "",
-        username: params.get("username") || "",
-        auth_code: params.get("auth_code") || "",
-        hash: params.get("hash") || "",
-        iframe_src: params.get("iframe_src") || window.location.href
+        user_id: searchParameters.get("user_id") || "",
+        username: searchParameters.get("username") || "",
+        auth_code: searchParameters.get("auth_code") || "",
+        hash: searchParameters.get("hash") || "",
+        iframe_src: searchParameters.get("iframe_src") || ""
       };
     }
 
-    const urlParams = getUrlParams();
+    function validateAuthenticationParameters(parameters) {
+      const missingParameters = [];
 
-    function hasAuthParams() {
-      return !!(
-        urlParams.user_id &&
-        urlParams.username &&
-        urlParams.auth_code &&
-        urlParams.hash &&
-        urlParams.iframe_src
+      if (!parameters.user_id) {
+        missingParameters.push("user_id");
+      }
+
+      if (!parameters.username) {
+        missingParameters.push("username");
+      }
+
+      if (!parameters.auth_code) {
+        missingParameters.push("auth_code");
+      }
+
+      if (!parameters.hash) {
+        missingParameters.push("hash");
+      }
+
+      if (missingParameters.length > 0) {
+        throw new Error(
+          "Missing authentication parameters: " +
+          missingParameters.join(", ")
+        );
+      }
+    }
+
+    async function retrieveExamResults(iframeParameters) {
+      const requestPayload = {
+        form_type: "exam_admin",
+        form_subtype: "exams/radar",
+        iframe_params: iframeParameters
+      };
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(requestPayload)
+      });
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch (error) {
+        throw new Error(
+          "The API returned a response that was not valid JSON."
+        );
+      }
+
+      if (!response.ok) {
+        const apiMessage =
+          result?.response?.error_message ||
+          result?.response?.message ||
+          result?.error_message ||
+          result?.message;
+
+        throw new Error(
+          apiMessage ||
+          `The API request failed with HTTP status ${response.status}.`
+        );
+      }
+
+      return result;
+    }
+
+    function extractResponseData(result) {
+      /*
+       * The response currently has this structure:
+       *
+       * {
+       *   "http_status_code": "200",
+       *   "response": {
+       *     "status": "success",
+       *     "message": "success",
+       *     "data": { ... }
+       *   }
+       * }
+       */
+
+      const statusCode = String(
+        result?.http_status_code ?? ""
+      );
+
+      const responseStatus = String(
+        result?.response?.status ?? ""
+      ).toLowerCase();
+
+      if (statusCode && statusCode !== "200") {
+        throw new Error(
+          result?.response?.error_message ||
+          result?.response?.message ||
+          `The API returned status ${statusCode}.`
+        );
+      }
+
+      if (responseStatus !== "success") {
+        throw new Error(
+          result?.response?.error_message ||
+          result?.response?.message ||
+          "The API did not return a successful result."
+        );
+      }
+
+      const data = result?.response?.data;
+
+      if (!data || typeof data !== "object") {
+        throw new Error(
+          "The API response did not contain a data object."
+        );
+      }
+
+      return data;
+    }
+
+    function renderResults(data) {
+      const categories = Array.isArray(data.categories)
+        ? data.categories
+        : [];
+
+      if (categories.length === 0) {
+        showEmpty();
+        return;
+      }
+
+      const sortedCategories = sortCategories(categories);
+
+      const currentExam = data.current_exam || {};
+      const previousExam = data.previous_exam || {};
+      const pillar = data.pillar || {};
+
+      renderHeader(pillar);
+      renderExamCard("current", currentExam);
+      renderExamCard("previous", previousExam);
+      renderRadarChart(sortedCategories, currentExam, previousExam);
+      renderCategoryTable(sortedCategories);
+
+      document
+        .getElementById("loadingPanel")
+        .classList.add("hidden");
+
+      document
+        .getElementById("errorPanel")
+        .classList.add("hidden");
+
+      document
+        .getElementById("emptyPanel")
+        .classList.add("hidden");
+
+      document
+        .getElementById("resultsPanel")
+        .classList.remove("hidden");
+    }
+
+    function renderHeader(pillar) {
+      const pillarName =
+        normaliseText(pillar.pillar_name) ||
+        "Exam Results";
+
+      document.getElementById("pageTitle").textContent =
+        pillarName;
+
+      document.getElementById("pageSubtitle").textContent =
+        "Assessment performance by category";
+    }
+
+    function renderExamCard(prefix, exam) {
+      setText(
+        `${prefix}ExamName`,
+        exam.exam_name
+      );
+
+      setText(
+        `${prefix}ExamCode`,
+        exam.exam_code
+      );
+
+      setText(
+        `${prefix}ExamLevel`,
+        exam.level_name || exam.level_code
+      );
+
+      setText(
+        `${prefix}ExamCompleted`,
+        formatDateTime(exam.completed_at)
+      );
+
+      setText(
+        `${prefix}ExamScore`,
+        formatScore(exam.overall_score)
+      );
+
+      setResultBadge(
+        `${prefix}ExamResult`,
+        exam.passed
       );
     }
 
-    function authHeaders() {
-      return {
-        "Content-Type": "application/json",
-        "Api-token": API_TOKEN
-      };
-    }
+    function renderRadarChart(
+      categories,
+      currentExam,
+      previousExam
+    ) {
+      const labels = categories.map(category => {
+        const categoryName =
+          normaliseText(category.category_name) ||
+          normaliseText(category.category_code) ||
+          "Category";
 
-    function buildRequestPayload(formType, formSubtype, formDetails) {
-      const request = {
-        form_type: formType,
-        form_subtype: formSubtype,
-        iframe_params: {
-          user_id: urlParams.user_id,
-          username: urlParams.username,
-          auth_code: urlParams.auth_code,
-          hash: urlParams.hash,
-          iframe_src: urlParams.iframe_src
+        const levelName =
+          normaliseText(category.level_name) ||
+          normaliseText(category.level_code);
+
+        return levelName
+          ? `${categoryName} (${levelName})`
+          : categoryName;
+      });
+
+      const currentScores = categories.map(category =>
+        toChartNumber(category.score)
+      );
+
+      const previousScores = categories.map(category =>
+        toChartNumber(category.last_score)
+      );
+
+      const datasets = [
+        {
+          label:
+            normaliseText(currentExam.exam_name) ||
+            "Current score",
+          data: currentScores,
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: true
         }
-      };
+      ];
 
-      if (formDetails) {
-        request.form_details = formDetails;
+      const hasPreviousScores = categories.some(category =>
+        hasNumericValue(category.last_score)
+      );
+
+      if (hasPreviousScores) {
+        datasets.push({
+          label:
+            normaliseText(previousExam.exam_name) ||
+            getPreviousScoreLabel(categories) ||
+            "Previous score",
+          data: previousScores,
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: true
+        });
       }
 
-      return request;
+      const canvas = document.getElementById("radarChart");
+      const context = canvas.getContext("2d");
+
+      if (radarChart) {
+        radarChart.destroy();
+      }
+
+      radarChart = new Chart(context, {
+        type: "radar",
+
+        data: {
+          labels: labels,
+          datasets: datasets
+        },
+
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+
+          interaction: {
+            mode: "nearest",
+            intersect: false
+          },
+
+          scales: {
+            r: {
+              min: 0,
+              max: 100,
+              beginAtZero: true,
+
+              ticks: {
+                stepSize: 20,
+                backdropColor: "transparent",
+                callback: function(value) {
+                  return `${value}%`;
+                }
+              },
+
+              pointLabels: {
+                font: {
+                  size: 12
+                },
+
+                callback: function(label) {
+                  return wrapChartLabel(label, 24);
+                }
+              }
+            }
+          },
+
+          plugins: {
+            legend: {
+              display: true,
+              position: "right",
+
+              labels: {
+                usePointStyle: true,
+                boxWidth: 10,
+                padding: 18
+              }
+            },
+
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value =
+                    context.raw === null ||
+                    context.raw === undefined
+                      ? "No score"
+                      : `${context.raw}%`;
+
+                  return `${context.dataset.label}: ${value}`;
+                }
+              }
+            }
+          }
+        }
+      });
     }
 
-    function getRadarEndpoint() {
-      return RADAR_ENDPOINT;
-    }
+    function renderCategoryTable(categories) {
+      const tableBody =
+        document.getElementById("categoryTableBody");
 
-    function parseNumber(value, fallback) {
-      const n = Number(value);
-      return isNaN(n) ? (fallback || 0) : n;
-    }
+      tableBody.innerHTML = "";
 
-    function formatDate(dateString) {
-      if (!dateString) return "—";
+      categories.forEach(category => {
+        const row = document.createElement("tr");
 
-      const d = new Date(dateString);
-      if (isNaN(d.getTime())) return dateString;
+        const levelCell = document.createElement("td");
+        levelCell.textContent =
+          normaliseText(category.level_name) ||
+          normaliseText(category.level_code) ||
+          "—";
 
-      return d.toLocaleDateString("en-NZ", {
-        year: "numeric",
-        month: "short",
-        day: "numeric"
+        const categoryCell = document.createElement("td");
+        categoryCell.textContent =
+          normaliseText(category.category_name) ||
+          normaliseText(category.category_code) ||
+          "—";
+
+        const currentScoreCell =
+          document.createElement("td");
+
+        currentScoreCell.className = "number";
+        currentScoreCell.textContent =
+          formatScore(category.score);
+
+        const previousScoreCell =
+          document.createElement("td");
+
+        previousScoreCell.className = "number";
+        previousScoreCell.textContent =
+          formatScore(category.last_score);
+
+        row.appendChild(levelCell);
+        row.appendChild(categoryCell);
+        row.appendChild(currentScoreCell);
+        row.appendChild(previousScoreCell);
+
+        tableBody.appendChild(row);
       });
     }
 
     function sortCategories(categories) {
-      return (categories || []).slice().sort(function(a, b) {
-        return parseNumber(a.sort_order, 0) - parseNumber(b.sort_order, 0);
-      });
-    }
+      return [...categories].sort((first, second) => {
+        const firstLevel =
+          toSortNumber(first.level_sort_order);
 
-    function normaliseData(raw) {
-      const data = raw && raw.data ? raw.data : {};
-      const currentExam = data.current_exam || {};
-      const previousExam = data.previous_exam || null;
-      const categories = sortCategories(data.categories || []).map(function(item) {
-        return {
-          category_code: item.category_code || "",
-          category_name: item.category_name || item.category_code || "",
-          sort_order: parseNumber(item.sort_order, 0),
-          current_score: parseNumber(item.current_score, 0),
-          previous_score: item.previous_score == null ? null : parseNumber(item.previous_score, 0),
-          pass_score: parseNumber(item.pass_score, 0)
-        };
-      });
+        const secondLevel =
+          toSortNumber(second.level_sort_order);
 
-      return {
-        status: raw && raw.status ? raw.status : "",
-        message: raw && raw.message ? raw.message : "",
-        current_exam: currentExam,
-        previous_exam: previousExam,
-        categories: categories
-      };
-    }
-
-    function updateSummary() {
-      if (!pageData) {
-        qs("summaryCurrentExam").textContent = "—";
-        qs("summaryPreviousExam").textContent = "—";
-        qs("summaryOverallScore").textContent = "—";
-        qs("summaryPassStatus").textContent = "—";
-        qs("pageSubhead").textContent = "No data loaded.";
-        return;
-      }
-
-      const currentExam = pageData.current_exam || {};
-      const previousExam = pageData.previous_exam || null;
-
-      qs("summaryCurrentExam").textContent =
-        (currentExam.exam_name || currentExam.exam_code || "—");
-
-      qs("summaryPreviousExam").textContent =
-        previousExam ? (previousExam.exam_name || previousExam.exam_code || "—") : "No previous exam";
-
-      qs("summaryOverallScore").textContent =
-        currentExam.overall_score != null ? String(currentExam.overall_score) + "%" : "—";
-
-      qs("summaryPassStatus").innerHTML =
-        currentExam.passed === true
-          ? '<span class="pass-yes">Passed</span>'
-          : currentExam.passed === false
-            ? '<span class="pass-no">Not passed</span>'
-            : "—";
-
-      qs("pageTitle").textContent = "My Exam Radar";
-      qs("pageSubhead").textContent =
-        (currentExam.exam_name || currentExam.exam_code || "Current exam") +
-        (currentExam.completed_at ? " • Completed " + formatDate(currentExam.completed_at) : "");
-    }
-
-    function renderCategoryList() {
-      const container = qs("resultsList");
-
-      if (!pageData || !pageData.categories.length) {
-        container.innerHTML = '<div class="empty-note">No category scores are available.</div>';
-        return;
-      }
-
-      container.innerHTML = pageData.categories.map(function(cat) {
-        return `
-          <div class="result-row">
-            <div class="result-row-top">
-              <div>
-                <div class="result-title">${escapeHtml(cat.category_name)}</div>
-                <div class="result-code">${escapeHtml(cat.category_code)}</div>
-              </div>
-            </div>
-
-            <div class="result-scores">
-              <div class="score-box">
-                <strong>Current</strong>
-                <span>${escapeHtml(cat.current_score)}%</span>
-              </div>
-              <div class="score-box">
-                <strong>Last</strong>
-                <span>${cat.previous_score == null ? "—" : escapeHtml(cat.previous_score) + "%"}</span>
-              </div>
-              <div class="score-box">
-                <strong>Pass</strong>
-                <span>${escapeHtml(cat.pass_score)}%</span>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function polarToCartesian(cx, cy, radius, angleRadians) {
-      return {
-        x: cx + radius * Math.cos(angleRadians),
-        y: cy + radius * Math.sin(angleRadians)
-      };
-    }
-
-    function buildPolygonPoints(values, cx, cy, maxRadius, maxValue) {
-      if (!values.length) return "";
-
-      return values.map(function(value, index) {
-        const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / values.length));
-        const radius = (Math.max(0, Math.min(value, maxValue)) / maxValue) * maxRadius;
-        const point = polarToCartesian(cx, cy, radius, angle);
-        return point.x.toFixed(2) + "," + point.y.toFixed(2);
-      }).join(" ");
-    }
-
-    function renderRadarChart() {
-      const holder = qs("chartHolder");
-
-      if (!pageData || !pageData.categories.length) {
-        holder.innerHTML = '<div class="empty-note">No radar data is available.</div>';
-        return;
-      }
-
-      const categories = pageData.categories;
-      const labels = categories.map(function(c) { return c.category_name; });
-      const currentValues = categories.map(function(c) { return c.current_score; });
-      const previousValues = categories.map(function(c) {
-        return c.previous_score == null ? 0 : c.previous_score;
-      });
-      const passValues = categories.map(function(c) { return c.pass_score; });
-
-      const hasPrevious = categories.some(function(c) {
-        return c.previous_score != null;
-      });
-
-      const width = 760;
-      const height = 620;
-      const cx = 330;
-      const cy = 300;
-      const maxRadius = 190;
-      const labelRadius = 235;
-      const maxValue = 100;
-      const gridLevels = [20, 40, 60, 80, 100];
-
-      const axisLines = labels.map(function(label, index) {
-        const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / labels.length));
-        const end = polarToCartesian(cx, cy, maxRadius, angle);
-        const labelPoint = polarToCartesian(cx, cy, labelRadius, angle);
-
-        let anchor = "middle";
-        if (labelPoint.x > cx + 15) anchor = "start";
-        if (labelPoint.x < cx - 15) anchor = "end";
-
-        return `
-          <line x1="${cx}" y1="${cy}" x2="${end.x}" y2="${end.y}" stroke="#cfcfcf" stroke-width="1" />
-          <text x="${labelPoint.x}" y="${labelPoint.y}" font-size="13" fill="#333" text-anchor="${anchor}" dominant-baseline="middle">
-            ${escapeHtml(label)}
-          </text>
-        `;
-      }).join("");
-
-      const gridPolygons = gridLevels.map(function(level) {
-        const radius = (level / maxValue) * maxRadius;
-        const points = labels.map(function(_, index) {
-          const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / labels.length));
-          const p = polarToCartesian(cx, cy, radius, angle);
-          return p.x.toFixed(2) + "," + p.y.toFixed(2);
-        }).join(" ");
-
-        return `
-          <polygon points="${points}" fill="none" stroke="#dddddd" stroke-width="1" />
-          <text x="${cx + 8}" y="${cy - radius + 4}" font-size="11" fill="#777">${level}</text>
-        `;
-      }).join("");
-
-      const passPoints = buildPolygonPoints(passValues, cx, cy, maxRadius, maxValue);
-      const previousPoints = buildPolygonPoints(previousValues, cx, cy, maxRadius, maxValue);
-      const currentPoints = buildPolygonPoints(currentValues, cx, cy, maxRadius, maxValue);
-
-      const currentDots = categories.map(function(cat, index) {
-        const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / categories.length));
-        const radius = (cat.current_score / maxValue) * maxRadius;
-        const point = polarToCartesian(cx, cy, radius, angle);
-        return `<circle cx="${point.x}" cy="${point.y}" r="4" fill="var(--currentColor)" />`;
-      }).join("");
-
-      const previousDots = hasPrevious ? categories.map(function(cat, index) {
-        if (cat.previous_score == null) return "";
-        const angle = (-Math.PI / 2) + (index * (Math.PI * 2 / categories.length));
-        const radius = (cat.previous_score / maxValue) * maxRadius;
-        const point = polarToCartesian(cx, cy, radius, angle);
-        return `<circle cx="${point.x}" cy="${point.y}" r="3.5" fill="var(--previousColor)" />`;
-      }).join("") : "";
-
-      holder.innerHTML = `
-        <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Radar chart of exam category scores">
-          <rect x="0" y="0" width="${width}" height="${height}" fill="#fff"></rect>
-
-          ${gridPolygons}
-          ${axisLines}
-
-          <polygon
-            points="${passPoints}"
-            fill="none"
-            stroke="var(--passColor)"
-            stroke-width="2"
-            stroke-dasharray="6 5">
-          </polygon>
-
-          ${
-            hasPrevious ? `
-            <polygon
-              points="${previousPoints}"
-              fill="rgba(136,136,136,0.08)"
-              stroke="var(--previousColor)"
-              stroke-width="2">
-            </polygon>
-            ` : ""
-          }
-
-          <polygon
-            points="${currentPoints}"
-            fill="rgba(0,94,184,0.14)"
-            stroke="var(--currentColor)"
-            stroke-width="3">
-          </polygon>
-
-          ${previousDots}
-          ${currentDots}
-        </svg>
-      `;
-    }
-
-    function renderPage() {
-      updateSummary();
-      renderRadarChart();
-      renderCategoryList();
-    }
-
-    async function loadRadarData() {
-      try {
-        clearPageMessage();
-
-        if (!hasAuthParams()) {
-          throw new Error("Missing authentication parameters in the URL.");
+        if (firstLevel !== secondLevel) {
+          return firstLevel - secondLevel;
         }
 
-        const payload = buildRequestPayload("exam_admin", RADAR_SUBTYPE);
+        const firstCategory =
+          toSortNumber(first.category_sort_order);
 
-        const response = await fetch(getRadarEndpoint(), {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify(payload)
-        });
+        const secondCategory =
+          toSortNumber(second.category_sort_order);
 
-        const result = await response.json();
+        if (firstCategory !== secondCategory) {
+          return firstCategory - secondCategory;
+        }
 
-        if (!response.ok || result.status !== "success") {
-          showPageMessage(
-            "error",
-            (result && (result.error_message || result.message)) || "Could not load radar data."
+        return String(first.category_name || "")
+          .localeCompare(
+            String(second.category_name || "")
           );
-          return;
-        }
-
-        pageData = normaliseData(result);
-        renderPage();
-      } catch (err) {
-        showPageMessage("error", err.message || "Error loading radar data.");
-        console.error(err);
-      }
+      });
     }
 
-    qs("reloadBtn").addEventListener("click", function() {
-      loadRadarData();
-    });
+    function getPreviousScoreLabel(categories) {
+      const categoryWithLabel = categories.find(category =>
+        normaliseText(category.last_label)
+      );
 
-    loadRadarData();
+      return categoryWithLabel
+        ? categoryWithLabel.last_label
+        : "";
+    }
+
+    function setText(elementId, value) {
+      const element = document.getElementById(elementId);
+
+      if (!element) {
+        return;
+      }
+
+      element.textContent =
+        normaliseText(value) || "—";
+    }
+
+    function setResultBadge(elementId, passed) {
+      const element = document.getElementById(elementId);
+
+      if (!element) {
+        return;
+      }
+
+      element.classList.remove(
+        "status-passed",
+        "status-not-passed"
+      );
+
+      if (passed === true) {
+        element.textContent = "Passed";
+        element.classList.add("status-passed");
+        return;
+      }
+
+      if (passed === false) {
+        element.textContent = "Not passed";
+        element.classList.add("status-not-passed");
+        return;
+      }
+
+      element.textContent = "—";
+    }
+
+    function formatScore(value) {
+      if (!hasNumericValue(value)) {
+        return "—";
+      }
+
+      return `${Number(value)}%`;
+    }
+
+    function formatDateTime(value) {
+      if (!value) {
+        return "—";
+      }
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return String(value);
+      }
+
+      return new Intl.DateTimeFormat("en-NZ", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(date);
+    }
+
+    function normaliseText(value) {
+      if (
+        value === null ||
+        value === undefined
+      ) {
+        return "";
+      }
+
+      return String(value).trim();
+    }
+
+    function hasNumericValue(value) {
+      return (
+        value !== null &&
+        value !== undefined &&
+        value !== "" &&
+        Number.isFinite(Number(value))
+      );
+    }
+
+    function toChartNumber(value) {
+      if (!hasNumericValue(value)) {
+        return null;
+      }
+
+      const number = Number(value);
+
+      return Math.max(0, Math.min(100, number));
+    }
+
+    function toSortNumber(value) {
+      if (!hasNumericValue(value)) {
+        return Number.MAX_SAFE_INTEGER;
+      }
+
+      return Number(value);
+    }
+
+    function wrapChartLabel(label, maximumLength) {
+      const words = String(label).split(" ");
+      const lines = [];
+      let currentLine = "";
+
+      words.forEach(word => {
+        const proposedLine = currentLine
+          ? `${currentLine} ${word}`
+          : word;
+
+        if (
+          proposedLine.length > maximumLength &&
+          currentLine
+        ) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = proposedLine;
+        }
+      });
+
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      return lines;
+    }
+
+    function showError(message) {
+      document
+        .getElementById("loadingPanel")
+        .classList.add("hidden");
+
+      document
+        .getElementById("resultsPanel")
+        .classList.add("hidden");
+
+      document
+        .getElementById("emptyPanel")
+        .classList.add("hidden");
+
+      document
+        .getElementById("errorPanel")
+        .classList.remove("hidden");
+
+      document.getElementById("errorMessage").textContent =
+        message || "An unexpected error occurred.";
+    }
+
+    function showEmpty() {
+      document
+        .getElementById("loadingPanel")
+        .classList.add("hidden");
+
+      document
+        .getElementById("resultsPanel")
+        .classList.add("hidden");
+
+      document
+        .getElementById("errorPanel")
+        .classList.add("hidden");
+
+      document
+        .getElementById("emptyPanel")
+        .classList.remove("hidden");
+    }
   </script>
 </body>
 </html>
