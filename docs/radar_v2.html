@@ -17,11 +17,19 @@
     .state { padding:28px; text-align:center; }
     .error { color:var(--danger); background:#fff5f5; border-color:#efc2c2; }
     .hidden { display:none !important; }
+    .exam-summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+    .exam-summary-card { padding:18px 20px; }
+    .exam-summary-label { margin:0 0 8px; color:var(--muted); font-size:12px; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }
+    .exam-summary-title { margin:0 0 14px; font-size:18px; line-height:1.35; }
+    .exam-summary-details { display:grid; grid-template-columns:auto 1fr; gap:7px 14px; font-size:14px; }
+    .exam-summary-details .value { font-weight:650; }
+    .exam-empty { color:var(--muted); font-size:14px; }
     .results-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(280px,.8fr); gap:20px; align-items:start; }
     .chart-card { padding:20px; }
     .card-title { margin:0 0 4px; font-size:20px; }
     .card-description { margin:0 0 18px; color:var(--muted); font-size:14px; }
     .chart-wrapper { position:relative; width:100%; height:620px; }
+    .category-scroll { max-height:710px; overflow-y:auto; padding-right:6px; scrollbar-gutter:stable; }
     .category-column { display:grid; gap:12px; }
     .category-card { padding:16px 18px; }
     .category-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
@@ -32,7 +40,13 @@
     .label { color:var(--muted); }
     .pass { color:var(--success); font-weight:700; }
     .fail { color:var(--danger); font-weight:700; }
-    @media (max-width:900px) { body{padding:14px;} .results-grid{grid-template-columns:1fr;} .chart-wrapper{height:520px;} }
+    @media (max-width:900px) {
+      body{padding:14px;}
+      .exam-summary-grid{grid-template-columns:1fr;}
+      .results-grid{grid-template-columns:1fr;}
+      .chart-wrapper{height:520px;}
+      .category-scroll{max-height:520px;}
+    }
     @media (max-width:520px) { .chart-wrapper{height:430px;} }
   </style>
 </head>
@@ -48,13 +62,19 @@
     <section id="emptyPanel" class="panel state hidden"><strong>No exam results are available yet.</strong><div id="emptyMessage" style="margin-top:8px;color:#666"></div></section>
 
     <section id="resultsPanel" class="hidden">
+      <div class="exam-summary-grid">
+        <article id="currentExamCard" class="panel exam-summary-card"></article>
+        <article id="previousExamCard" class="panel exam-summary-card"></article>
+      </div>
       <div class="results-grid">
         <article class="panel chart-card">
           <h2 class="card-title">Category profile</h2>
           <p id="chartDescription" class="card-description">Your latest result in each category compared with the pass mark.</p>
           <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
         </article>
-        <aside id="categoryCards" class="category-column" aria-label="Category results"></aside>
+        <aside class="category-scroll" aria-label="Category results">
+          <div id="categoryCards" class="category-column"></div>
+        </aside>
       </div>
     </section>
   </main>
@@ -185,9 +205,57 @@
 
   function renderResults(result, categories) {
     document.getElementById("pageSubtitle").textContent = result.pillar ? `Assessment performance — Pillar ${result.pillar}` : "Assessment performance by category";
+    renderExamSummary("currentExamCard", "Current exam", result.current_exam);
+    renderExamSummary("previousExamCard", "Previous exam", result.previous_exam);
     renderRadarChart(categories);
     renderCategoryCards(categories);
     showResults();
+  }
+
+
+  function renderExamSummary(elementId, label, exam) {
+    const container = document.getElementById(elementId);
+    container.innerHTML = "";
+
+    const labelEl = document.createElement("div");
+    labelEl.className = "exam-summary-label";
+    labelEl.textContent = label;
+    container.appendChild(labelEl);
+
+    if (!exam || typeof exam !== "object" || !normaliseText(exam.exam_title)) {
+      const empty = document.createElement("div");
+      empty.className = "exam-empty";
+      empty.textContent = label === "Previous exam" ? "No previous exam" : "No exam details available";
+      container.appendChild(empty);
+      return;
+    }
+
+    const title = document.createElement("h2");
+    title.className = "exam-summary-title";
+    title.textContent = normaliseText(exam.exam_title);
+    container.appendChild(title);
+
+    const details = document.createElement("div");
+    details.className = "exam-summary-details";
+
+    addExamDetail(details, "Exam", normaliseText(exam.exam_id) || "—");
+    addExamDetail(details, "Level", normaliseText(exam.level) || "—");
+    addExamDetail(details, "Completed", formatDate(exam.taken_at));
+    addExamDetail(details, "Overall score", hasNumericValue(exam.overall_score) ? `${Number(exam.overall_score)}%` : "—");
+
+    // exam.pass_mark is intentionally not displayed yet. It remains available in the API.
+    container.appendChild(details);
+  }
+
+  function addExamDetail(container, label, value) {
+    container.append(makeCell(label, "label"), makeCell(value, "value"));
+  }
+
+  function formatDate(value) {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return normaliseText(value) || "—";
+    return new Intl.DateTimeFormat("en-NZ", { day:"numeric", month:"short", year:"numeric" }).format(date);
   }
 
   function renderRadarChart(categories) {
