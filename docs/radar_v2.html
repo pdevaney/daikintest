@@ -13,6 +13,11 @@
     .header { margin-bottom:18px; }
     h1 { margin:0 0 5px; font-size:26px; }
     .subtitle { margin:0; color:var(--muted); }
+    .header-row { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; }
+    .pillar-control { display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+    .pillar-control label { color:var(--muted); font-size:14px; font-weight:650; }
+    .pillar-select { min-width:120px; padding:8px 34px 8px 11px; border:1px solid var(--border); border-radius:7px; background:#fff; color:#222; font:inherit; font-size:14px; }
+    .pillar-select:disabled { opacity:.65; cursor:wait; }
     .panel { background:var(--card); border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow); }
     .state { padding:28px; text-align:center; }
     .error { color:var(--danger); background:#fff5f5; border-color:#efc2c2; }
@@ -34,7 +39,6 @@
     .category-card { padding:16px 18px; }
     .category-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
     .category-name { font-weight:700; font-size:15px; line-height:1.3; }
-    .category-code { margin-top:3px; color:var(--muted); font-size:12px; }
     .category-score { font-size:25px; font-weight:750; white-space:nowrap; }
     .category-details { display:grid; grid-template-columns:1fr auto; gap:7px 12px; font-size:13px; }
     .label { color:var(--muted); }
@@ -42,6 +46,7 @@
     .fail { color:var(--danger); font-weight:700; }
     @media (max-width:900px) {
       body{padding:14px;}
+      .header-row{align-items:flex-start;flex-direction:column;}
       .exam-summary-grid{grid-template-columns:1fr;}
       .results-grid{grid-template-columns:1fr;}
       .chart-wrapper{height:520px;}
@@ -53,8 +58,16 @@
 <body>
   <main class="page">
     <header class="header">
-      <h1>Exam Results</h1>
-      <p id="pageSubtitle" class="subtitle">Loading your assessment profile...</p>
+      <div class="header-row">
+        <div>
+          <h1>Exam Results</h1>
+          <p id="pageSubtitle" class="subtitle">Loading your assessment profile...</p>
+        </div>
+        <div id="pillarControl" class="pillar-control hidden">
+          <label for="pillarSelect">Pillar</label>
+          <select id="pillarSelect" class="pillar-select" aria-label="Select pillar"></select>
+        </div>
+      </div>
     </header>
 
     <section id="loadingPanel" class="panel state">Loading your exam results...</section>
@@ -69,7 +82,7 @@
       <div class="results-grid">
         <article class="panel chart-card">
           <h2 class="card-title">Category profile</h2>
-          <p id="chartDescription" class="card-description">Your latest result in each category compared with the pass mark.</p>
+          <p id="chartDescription" class="card-description">Your latest result in each category. Pass marks are shown where a result exists.</p>
           <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
         </article>
         <aside class="category-scroll" aria-label="Category results">
@@ -87,19 +100,46 @@
   const FORM_SUBTYPE = "exams/radar";
 
   let radarChart = null;
+  let iframeParameters = null;
+  let selectedPillar = "";
 
   document.addEventListener("DOMContentLoaded", initialisePage);
 
   async function initialisePage() {
     try {
       validateConfiguration();
-      const iframeParameters = getIframeParameters();
+      iframeParameters = getIframeParameters();
       validateAuthenticationParameters(iframeParameters);
-      const result = await retrieveExamResults(iframeParameters);
-      handleApiResult(result);
+      document.getElementById("pillarSelect").addEventListener("change", handlePillarChange);
+      await loadResults("");
     } catch (error) {
       console.error("Unable to display radar chart:", error);
       showError(error.message);
+    }
+  }
+
+  async function handlePillarChange(event) {
+    const pillar = normaliseText(event.target.value);
+    if (!pillar || pillar === selectedPillar) return;
+    await loadResults(pillar);
+  }
+
+  async function loadResults(pillar) {
+    setPillarLoading(true);
+    if (!document.getElementById("resultsPanel").classList.contains("hidden")) {
+      document.getElementById("pageSubtitle").textContent = "Loading assessment profile...";
+    } else {
+      showLoading();
+    }
+
+    try {
+      const body = await retrieveExamResults(iframeParameters, pillar);
+      handleApiResult(body);
+    } catch (error) {
+      console.error("Unable to display radar chart:", error);
+      showError(error.message);
+    } finally {
+      setPillarLoading(false);
     }
   }
 
@@ -124,10 +164,11 @@
     if (missing.length) throw new Error("Missing authentication parameters: " + missing.join(", "));
   }
 
-  async function retrieveExamResults(iframeParameters) {
+  async function retrieveExamResults(iframeParameters, pillar) {
     const requestPayload = {
       form_type: FORM_TYPE,
       form_subtype: FORM_SUBTYPE,
+      pillar: normaliseText(pillar),
       iframe_params: iframeParameters
     };
 
@@ -149,8 +190,6 @@
       catch (e) { throw new Error(`The API returned HTTP ${response.status}, but its response was not valid JSON.`); }
     }
 
-    // Workato may return our result payload even for non-2xx application responses.
-    // Preserve it so the page can display the API's user-facing message.
     if (!response.ok) {
       const result = extractResultObject(body);
       if (result && result.message) {
@@ -167,15 +206,9 @@
   }
 
   function extractResultObject(body) {
-    // Preferred new response: { result: {...} }
     if (body && body.result && typeof body.result === "object") return body.result;
-
-    // Tolerate a Workato wrapper if the API recipe returns one.
     if (body && body.response && body.response.result && typeof body.response.result === "object") return body.response.result;
-
-    // Also tolerate the result fields being the response itself.
     if (body && body.response && body.response.status !== undefined && Array.isArray(body.response.categories)) return body.response;
-
     return null;
   }
 
@@ -184,34 +217,79 @@
     if (!result) throw new Error("The API response did not contain the expected result object.");
 
     const status = Number(result.status);
+    if (status !== 0) throw new Error(result.message || "Unable to retrieve exam results.");
+
     const categories = Array.isArray(result.categories) ? result.categories : [];
+    const pillarCategories = Array.isArray(result.pillar_categories) ? result.pillar_categories : [];
+    const pillars = Array.isArray(result.pillars) ? result.pillars : [];
 
-    if (status === 102) {
-      showEmpty(result.message || "No exam results found.");
+    selectedPillar = normaliseText(result.pillar);
+    renderPillarSelector(pillars, selectedPillar);
+
+    if (!pillarCategories.length) {
+      showEmpty("No categories are configured for this pillar.");
       return;
     }
 
-    if (status !== 0) {
-      throw new Error(result.message || "Unable to retrieve exam results.");
-    }
-
-    if (!categories.length) {
-      showEmpty("No category results are available.");
-      return;
-    }
-
-    renderResults(result, categories);
+    const radarCategories = buildRadarCategories(pillarCategories, categories);
+    renderResults(result, radarCategories, categories);
   }
 
-  function renderResults(result, categories) {
+  function buildRadarCategories(pillarCategories, resultCategories) {
+    const resultByCode = new Map();
+    resultCategories.forEach(category => {
+      const code = normaliseText(category.code);
+      if (code) resultByCode.set(code, category);
+    });
+
+    // Preserve the order supplied by the API. sort_order is local to each template/level.
+    return pillarCategories.map(category => {
+      const code = normaliseText(category.code);
+      const result = resultByCode.get(code);
+      return {
+        code,
+        name: normaliseText(category.name) || normaliseText(result && result.name) || "Category",
+        score: result && hasNumericValue(result.score) ? Number(result.score) : 0,
+        pass_mark: result && hasNumericValue(result.pass_mark) ? Number(result.pass_mark) : null,
+        attempted: Boolean(result)
+      };
+    });
+  }
+
+  function renderPillarSelector(pillars, currentPillar) {
+    const control = document.getElementById("pillarControl");
+    const select = document.getElementById("pillarSelect");
+    select.innerHTML = "";
+
+    pillars.forEach(pillar => {
+      const name = normaliseText(pillar.name);
+      if (!name) return;
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      option.selected = name === currentPillar;
+      select.appendChild(option);
+    });
+
+    if (currentPillar && !Array.from(select.options).some(option => option.value === currentPillar)) {
+      const option = document.createElement("option");
+      option.value = currentPillar;
+      option.textContent = currentPillar;
+      option.selected = true;
+      select.appendChild(option);
+    }
+
+    control.classList.toggle("hidden", select.options.length === 0);
+  }
+
+  function renderResults(result, radarCategories, resultCategories) {
     document.getElementById("pageSubtitle").textContent = result.pillar ? `Assessment performance — Pillar ${result.pillar}` : "Assessment performance by category";
     renderExamSummary("currentExamCard", "Current exam", result.current_exam);
     renderExamSummary("previousExamCard", "Previous exam", result.previous_exam);
-    renderRadarChart(categories);
-    renderCategoryCards(categories);
+    renderRadarChart(radarCategories);
+    renderCategoryCards(resultCategories);
     showResults();
   }
-
 
   function renderExamSummary(elementId, label, exam) {
     const container = document.getElementById(elementId);
@@ -222,28 +300,25 @@
     labelEl.textContent = label;
     container.appendChild(labelEl);
 
-    if (!exam || typeof exam !== "object" || !normaliseText(exam.exam_title)) {
+    if (!exam || typeof exam !== "object" || !normaliseText(exam.exam_id)) {
       const empty = document.createElement("div");
       empty.className = "exam-empty";
-      empty.textContent = label === "Previous exam" ? "No previous exam" : "No exam details available";
+      empty.textContent = label === "Previous exam" ? "No previous exam" : "No exams completed in this pillar";
       container.appendChild(empty);
       return;
     }
 
     const title = document.createElement("h2");
     title.className = "exam-summary-title";
-    title.textContent = normaliseText(exam.exam_title);
+    title.textContent = normaliseText(exam.exam_title) || normaliseText(exam.exam_id);
     container.appendChild(title);
 
     const details = document.createElement("div");
     details.className = "exam-summary-details";
-
     addExamDetail(details, "Exam", normaliseText(exam.exam_id) || "—");
     addExamDetail(details, "Level", normaliseText(exam.level) || "—");
     addExamDetail(details, "Completed", formatDate(exam.taken_at));
     addExamDetail(details, "Overall score", hasNumericValue(exam.overall_score) ? `${Number(exam.overall_score)}%` : "—");
-
-    // exam.pass_mark is intentionally not displayed yet. It remains available in the API.
     container.appendChild(details);
   }
 
@@ -259,42 +334,44 @@
   }
 
   function renderRadarChart(categories) {
-    const labels = categories.map(c => normaliseText(c.name) || normaliseText(c.code) || "Category");
-    const scores = categories.map(c => toChartNumber(c.score));
-    const passMarks = categories.map(c => toChartNumber(c.pass_mark));
+    const labels = categories.map(c => normaliseText(c.name) || "Category");
+    const scores = categories.map(c => toChartNumber(c.score) ?? 0);
+    const passMarks = categories.map(c => c.attempted ? toChartNumber(c.pass_mark) : null);
+    const hasPassMarks = passMarks.some(value => value !== null);
+
+    const datasets = [{
+      label: "Score",
+      data: scores,
+      borderColor: "rgba(0, 94, 184, 1)",
+      backgroundColor: "rgba(0, 94, 184, 0.18)",
+      pointBackgroundColor: "rgba(0, 94, 184, 1)",
+      pointBorderColor: "#fff",
+      borderWidth: 2,
+      pointRadius: 4,
+      fill: true
+    }];
+
+    if (hasPassMarks) {
+      datasets.push({
+        label: "Pass mark",
+        data: passMarks,
+        borderColor: "rgba(90, 90, 90, 0.9)",
+        backgroundColor: "rgba(90, 90, 90, 0.03)",
+        pointBackgroundColor: "rgba(90, 90, 90, 0.9)",
+        borderWidth: 2,
+        borderDash: [6, 5],
+        pointRadius: 2,
+        fill: false,
+        spanGaps: false
+      });
+    }
 
     const canvas = document.getElementById("radarChart");
     if (radarChart) radarChart.destroy();
 
     radarChart = new Chart(canvas.getContext("2d"), {
       type: "radar",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "Score",
-            data: scores,
-            borderColor: "rgba(0, 94, 184, 1)",
-            backgroundColor: "rgba(0, 94, 184, 0.18)",
-            pointBackgroundColor: "rgba(0, 94, 184, 1)",
-            pointBorderColor: "#fff",
-            borderWidth: 2,
-            pointRadius: 4,
-            fill: true
-          },
-          {
-            label: "Pass mark",
-            data: passMarks,
-            borderColor: "rgba(90, 90, 90, 0.9)",
-            backgroundColor: "rgba(90, 90, 90, 0.03)",
-            pointBackgroundColor: "rgba(90, 90, 90, 0.9)",
-            borderWidth: 2,
-            borderDash: [6, 5],
-            pointRadius: 2,
-            fill: false
-          }
-        ]
-      },
+      data: { labels, datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -309,7 +386,11 @@
         },
         plugins: {
           legend: { position:"bottom", labels:{ usePointStyle:true, padding:18 } },
-          tooltip: { callbacks:{ label:ctx => `${ctx.dataset.label}: ${ctx.raw == null ? "No score" : ctx.raw + "%"}` } }
+          tooltip: {
+            callbacks: {
+              label: ctx => ctx.raw == null ? `${ctx.dataset.label}: No result` : `${ctx.dataset.label}: ${ctx.raw}%`
+            }
+          }
         }
       }
     });
@@ -318,6 +399,14 @@
   function renderCategoryCards(categories) {
     const container = document.getElementById("categoryCards");
     container.innerHTML = "";
+
+    if (!categories.length) {
+      const empty = document.createElement("div");
+      empty.className = "panel state";
+      empty.textContent = "No results yet for this pillar.";
+      container.appendChild(empty);
+      return;
+    }
 
     categories.forEach(category => {
       const score = hasNumericValue(category.score) ? Number(category.score) : null;
@@ -333,15 +422,12 @@
       const titleBox = document.createElement("div");
       const name = document.createElement("div");
       name.className = "category-name";
-      name.textContent = normaliseText(category.name) || normaliseText(category.code) || "Category";
-      const code = document.createElement("div");
-      code.className = "category-code";
-      code.textContent = normaliseText(category.code);
-      titleBox.append(name, code);
+      name.textContent = normaliseText(category.name) || "Category";
+      titleBox.appendChild(name);
 
       const scoreBox = document.createElement("div");
       scoreBox.className = "category-score";
-      scoreBox.textContent = score === null ? "—" : `${score}%`;
+      scoreBox.textContent = score === null ? "—" : `${Math.round(score)}%`;
       heading.append(titleBox, scoreBox);
 
       const details = document.createElement("div");
@@ -365,12 +451,18 @@
   function hasNumericValue(value) { return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)); }
   function toChartNumber(value) { return hasNumericValue(value) ? Math.max(0, Math.min(100, Number(value))) : null; }
 
+  function setPillarLoading(isLoading) {
+    const select = document.getElementById("pillarSelect");
+    if (select) select.disabled = isLoading;
+  }
+
   function hideAll() {
     ["loadingPanel","errorPanel","emptyPanel","resultsPanel"].forEach(id => document.getElementById(id).classList.add("hidden"));
   }
+  function showLoading() { hideAll(); document.getElementById("loadingPanel").classList.remove("hidden"); }
   function showResults() { hideAll(); document.getElementById("resultsPanel").classList.remove("hidden"); }
   function showError(message) { hideAll(); document.getElementById("errorMessage").textContent = message || "An unexpected error occurred."; document.getElementById("errorPanel").classList.remove("hidden"); }
-  function showEmpty(message) { hideAll(); document.getElementById("emptyMessage").textContent = message || "No exam results found."; document.getElementById("emptyPanel").classList.remove("hidden"); }
+  function showEmpty(message) { hideAll(); document.getElementById("emptyMessage").textContent = message || "No categories are available."; document.getElementById("emptyPanel").classList.remove("hidden"); }
 </script>
 </body>
 </html>
