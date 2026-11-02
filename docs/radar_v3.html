@@ -249,7 +249,7 @@
       return {
         code,
         name: normaliseText(category.name) || normaliseText(result && result.name) || "Category",
-        score: result && hasNumericValue(result.score) ? Number(result.score) : 0,
+        score: result && hasNumericValue(result.score) ? Number(result.score) : null,
         pass_mark: result && hasNumericValue(result.pass_mark) ? Number(result.pass_mark) : null,
         attempted: Boolean(result)
       };
@@ -335,7 +335,9 @@
 
   function renderRadarChart(categories) {
     const labels = categories.map(c => normaliseText(c.name) || "Category");
-    const scores = categories.map(c => toChartNumber(c.score) ?? 0);
+    // Missing results remain null so the line can bridge unattempted categories.
+    // A genuine score of 0 remains 0 and is plotted at the centre.
+    const scores = categories.map(c => c.attempted ? toChartNumber(c.score) : null);
     const passMarks = categories.map(c => c.attempted ? toChartNumber(c.pass_mark) : null);
     const hasPassMarks = passMarks.some(value => value !== null);
 
@@ -348,6 +350,7 @@
       pointBorderColor: "#fff",
       borderWidth: 2,
       pointRadius: 4,
+      spanGaps: true,
       fill: true
     }];
 
