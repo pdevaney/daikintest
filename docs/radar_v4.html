@@ -82,7 +82,7 @@
       <div class="results-grid">
         <article class="panel chart-card">
           <h2 class="card-title">Category profile</h2>
-          <p id="chartDescription" class="card-description">Your latest result in each category. Pass marks are shown where a result exists.</p>
+          <p id="chartDescription" class="card-description">Your latest result in each category. The red dotted line shows the 80% pass mark for all categories.</p>
           <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
         </article>
         <aside class="category-scroll" aria-label="Category results">
@@ -96,6 +96,7 @@
   // Replace these with the endpoint/token for the tested radar API.
   const API_URL = "https://apim.workato.com/213564_daikinj/exam_management-v10/exams/radar";
   const API_TOKEN = "9f98ef3719fa6645943f8056f2b3a2c4dd8e7f20c92ccb83babfcd74a029104f";
+  const PASS_MARK = 80; // Temporary fixed pass mark for every category.
   const FORM_TYPE = "exam_admin";
   const FORM_SUBTYPE = "exams/radar";
 
@@ -287,7 +288,7 @@
     document.getElementById("pageSubtitle").textContent = result.pillar ? `Assessment performance — Pillar ${result.pillar}` : "Assessment performance by category";
     renderExamSummary("currentExamCard", "Current exam", result.current_exam);
     renderExamSummary("previousExamCard", "Previous exam", result.previous_exam);
-    renderRadarChart(radarCategories);
+    renderRadarChart(radarCategories, result.current_exam && result.current_exam.level);
     renderCategoryCards(resultCategories, radarCategories);
     showResults();
   }
@@ -334,54 +335,69 @@
     return new Intl.DateTimeFormat("en-NZ", { day:"numeric", month:"short", year:"numeric" }).format(date);
   }
 
-  function renderRadarChart(categories) {
+  function renderRadarChart(categories, currentLevel) {
     const labels = categories.map(c => normaliseText(c.name) || "Category");
-    // Missing results remain null so the line can bridge unattempted categories.
-    // A genuine score of 0 remains 0 and is plotted at the centre.
-    const scores = categories.map(c => c.attempted ? toChartNumber(c.score) : null);
-    const passMarks = categories.map(c => c.attempted ? toChartNumber(c.pass_mark) : null);
-    const hasPassMarks = passMarks.some(value => value !== null);
+    // Scores are classified by examination level, not by attempt date.
+    // Unattempted categories remain null; a real score of zero stays zero.
+    const current = Number(currentLevel);
+    const hasCurrentLevel = currentLevel != null && normaliseText(currentLevel) !== "" && Number.isFinite(current);
+    const currentScores = categories.map(c =>
+      c.attempted && hasCurrentLevel && Number(c.level) === current ? toChartNumber(c.score) : null
+    );
+    const earlierScores = categories.map(c =>
+      c.attempted && hasCurrentLevel && Number(c.level) < current ? toChartNumber(c.score) : null
+    );
+    const passMarks = categories.map(() => PASS_MARK);
 
-    const datasets = [{
-      label: "Score",
-      data: scores,
-      borderColor: "rgba(0, 94, 184, 1)",
-      backgroundColor: "rgba(0, 94, 184, 0.18)",
-      pointBackgroundColor: "rgba(0, 94, 184, 1)",
-      pointBorderColor: "#fff",
-      borderWidth: 2,
-      pointRadius: 4,
-      spanGaps: true,
-      fill: true
-    }];
-
-    if (hasPassMarks) {
-      datasets.push({
-        label: "Pass mark",
-        data: passMarks,
-        borderColor: "rgba(90, 90, 90, 0.9)",
-        backgroundColor: "rgba(90, 90, 90, 0.03)",
-        pointBackgroundColor: "rgba(90, 90, 90, 0.9)",
+    const datasets = [
+      {
+        label: "Current level score",
+        data: currentScores,
+        borderColor: "rgba(0, 94, 184, 1)",
+        backgroundColor: "rgba(0, 94, 184, 0.18)",
+        pointBackgroundColor: "rgba(0, 94, 184, 1)",
+        pointBorderColor: "#fff",
         borderWidth: 2,
-        borderDash: [6, 5],
-        pointRadius: 2,
-        // Draw an open path via the plugin below; Chart.js radar lines close by default.
-        showLine: false,
-        fill: false,
-        spanGaps: true
-      });
-    }
+        pointRadius: 4,
+        spanGaps: true,
+        fill: true
+      },
+      {
+        label: "Earlier level score",
+        data: earlierScores,
+        borderColor: "rgba(0, 94, 184, 0.85)",
+        backgroundColor: "transparent",
+        pointBackgroundColor: "rgba(0, 94, 184, 0.85)",
+        pointBorderColor: "#fff",
+        // The plugin draws the earlier-level open dotted line.
+        borderWidth: 0,
+        borderDash: [4, 5],
+        pointRadius: 3,
+        spanGaps: true,
+        fill: false
+      },
+      {
+        label: "Pass mark (80%)",
+        data: passMarks,
+        borderColor: "rgba(211, 47, 47, 1)",
+        backgroundColor: "transparent",
+        pointBackgroundColor: "rgba(211, 47, 47, 1)",
+        borderWidth: 2,
+        borderDash: [5, 5],
+        pointRadius: 0,
+        fill: false
+      }
+    ];
 
     const canvas = document.getElementById("radarChart");
     if (radarChart) radarChart.destroy();
 
-    // Draw the pass-mark line only between consecutive available points.
-    // Unlike a normal radar dataset, this does not connect the final point
-    // back to the first, while still bridging categories with no result.
-    const openPassMarkLine = {
-      id: "openPassMarkLine",
+    // Chart.js closes radar polygons by default. Draw historical scores as
+    // an open path so the last historical level does not connect to the first.
+    const earlierLevelLine = {
+      id: "earlierLevelLine",
       afterDatasetsDraw(chart) {
-        const datasetIndex = chart.data.datasets.findIndex(dataset => dataset.label === "Pass mark");
+        const datasetIndex = chart.data.datasets.findIndex(dataset => dataset.label === "Earlier level score");
         if (datasetIndex < 0) return;
         const dataset = chart.data.datasets[datasetIndex];
         const meta = chart.getDatasetMeta(datasetIndex);
@@ -399,7 +415,7 @@
         ctx.moveTo(points[0].x, points[0].y);
         points.slice(1).forEach(point => ctx.lineTo(point.x, point.y));
         ctx.strokeStyle = dataset.borderColor;
-        ctx.lineWidth = dataset.borderWidth;
+        ctx.lineWidth = 2;
         ctx.setLineDash(dataset.borderDash);
         ctx.stroke();
         ctx.restore();
@@ -409,7 +425,7 @@
     radarChart = new Chart(canvas.getContext("2d"), {
       type: "radar",
       data: { labels, datasets },
-      plugins: [openPassMarkLine],
+      plugins: [earlierLevelLine],
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -475,7 +491,7 @@
 
     orderedCategories.forEach(category => {
       const score = hasNumericValue(category.score) ? Number(category.score) : null;
-      const passMark = hasNumericValue(category.pass_mark) ? Number(category.pass_mark) : null;
+      const passMark = PASS_MARK;
       const passed = score !== null && passMark !== null ? score >= passMark : null;
 
       const card = document.createElement("article");
