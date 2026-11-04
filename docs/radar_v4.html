@@ -365,6 +365,8 @@
         borderWidth: 2,
         borderDash: [6, 5],
         pointRadius: 2,
+        // Draw an open path via the plugin below; Chart.js radar lines close by default.
+        showLine: false,
         fill: false,
         spanGaps: true
       });
@@ -373,9 +375,41 @@
     const canvas = document.getElementById("radarChart");
     if (radarChart) radarChart.destroy();
 
+    // Draw the pass-mark line only between consecutive available points.
+    // Unlike a normal radar dataset, this does not connect the final point
+    // back to the first, while still bridging categories with no result.
+    const openPassMarkLine = {
+      id: "openPassMarkLine",
+      afterDatasetsDraw(chart) {
+        const datasetIndex = chart.data.datasets.findIndex(dataset => dataset.label === "Pass mark");
+        if (datasetIndex < 0) return;
+        const dataset = chart.data.datasets[datasetIndex];
+        const meta = chart.getDatasetMeta(datasetIndex);
+        const points = dataset.data.flatMap((value, index) => {
+          if (value === null || value === undefined || !Number.isFinite(Number(value))) return [];
+          const point = meta.data[index];
+          if (!point) return [];
+          const position = point.getProps(["x", "y"], true);
+          return Number.isFinite(position.x) && Number.isFinite(position.y) ? [position] : [];
+        });
+        if (points.length < 2) return;
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        points.slice(1).forEach(point => ctx.lineTo(point.x, point.y));
+        ctx.strokeStyle = dataset.borderColor;
+        ctx.lineWidth = dataset.borderWidth;
+        ctx.setLineDash(dataset.borderDash);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+
     radarChart = new Chart(canvas.getContext("2d"), {
       type: "radar",
       data: { labels, datasets },
+      plugins: [openPassMarkLine],
       options: {
         responsive: true,
         maintainAspectRatio: false,
