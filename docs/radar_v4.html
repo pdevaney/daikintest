@@ -288,7 +288,7 @@
     document.getElementById("pageSubtitle").textContent = result.pillar ? `Assessment performance — Pillar ${result.pillar}` : "Assessment performance by category";
     renderExamSummary("currentExamCard", "Current exam", result.current_exam);
     renderExamSummary("previousExamCard", "Previous exam", result.previous_exam);
-    renderRadarChart(radarCategories, result.current_exam && result.current_exam.level);
+    renderRadarChart(radarCategories);
     renderCategoryCards(resultCategories, radarCategories);
     showResults();
   }
@@ -335,12 +335,19 @@
     return new Intl.DateTimeFormat("en-NZ", { day:"numeric", month:"short", year:"numeric" }).format(date);
   }
 
-  function renderRadarChart(categories, currentLevel) {
+  function renderRadarChart(categories) {
     const labels = categories.map(c => normaliseText(c.name) || "Category");
     // Scores are classified by examination level, not by attempt date.
     // Unattempted categories remain null; a real score of zero stays zero.
-    const current = Number(currentLevel);
-    const hasCurrentLevel = currentLevel != null && normaliseText(currentLevel) !== "" && Number.isFinite(current);
+    // The most recently taken exam is not necessarily the highest completed level.
+    // Use the highest level represented by scored categories returned by the API.
+    // The API remains responsible for choosing the latest attempt per category.
+    const completedLevels = categories
+      .filter(c => c.attempted && hasNumericValue(c.score) && normaliseText(c.level) !== "")
+      .map(c => Number(c.level))
+      .filter(level => Number.isFinite(level));
+    const hasCurrentLevel = completedLevels.length > 0;
+    const current = hasCurrentLevel ? Math.max(...completedLevels) : null;
     const currentScores = categories.map(c =>
       c.attempted && hasCurrentLevel && Number(c.level) === current ? toChartNumber(c.score) : null
     );
