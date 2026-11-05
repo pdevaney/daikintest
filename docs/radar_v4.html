@@ -354,13 +354,14 @@
         label: "Current level score",
         data: currentScores,
         borderColor: "rgba(0, 94, 184, 1)",
-        backgroundColor: "rgba(0, 94, 184, 0.18)",
+        backgroundColor: "transparent",
         pointBackgroundColor: "rgba(0, 94, 184, 1)",
         pointBorderColor: "#fff",
-        borderWidth: 2,
+        // Lines are drawn per level by the custom plugin; retain points/tooltips.
+        borderWidth: 0,
         pointRadius: 4,
-        spanGaps: true,
-        fill: true
+        spanGaps: false,
+        fill: false
       },
       {
         label: "Earlier level score",
@@ -392,40 +393,55 @@
     const canvas = document.getElementById("radarChart");
     if (radarChart) radarChart.destroy();
 
-    // Chart.js closes radar polygons by default. Draw historical scores as
-    // an open path so the last historical level does not connect to the first.
-    const earlierLevelLine = {
-      id: "earlierLevelLine",
-      afterDatasetsDraw(chart) {
-        const datasetIndex = chart.data.datasets.findIndex(dataset => dataset.label === "Earlier level score");
-        if (datasetIndex < 0) return;
-        const dataset = chart.data.datasets[datasetIndex];
-        const meta = chart.getDatasetMeta(datasetIndex);
-        const points = dataset.data.flatMap((value, index) => {
-          if (value === null || value === undefined || !Number.isFinite(Number(value))) return [];
-          const point = meta.data[index];
-          if (!point) return [];
-          const position = point.getProps(["x", "y"], true);
-          return Number.isFinite(position.x) && Number.isFinite(position.y) ? [position] : [];
-        });
-        if (points.length < 2) return;
+    // Draw each completed level independently: centre -> first category ->
+    // remaining categories -> centre. This avoids Chart.js closing a radar
+    // polygon directly between the first and last category scores.
+    // It also prevents earlier levels from being joined to one another.
+    const levelScorePaths = {
+      id: "levelScorePaths",
+      beforeDatasetsDraw(chart) {
+        const radialScale = chart.scales.r;
+        if (!radialScale) return;
+        const centerX = radialScale.xCenter;
+        const centerY = radialScale.yCenter;
         const ctx = chart.ctx;
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        points.slice(1).forEach(point => ctx.lineTo(point.x, point.y));
-        ctx.strokeStyle = dataset.borderColor;
-        ctx.lineWidth = 2;
-        ctx.setLineDash(dataset.borderDash);
-        ctx.stroke();
-        ctx.restore();
+
+        [0, 1].forEach(datasetIndex => {
+          const dataset = chart.data.datasets[datasetIndex];
+          const meta = chart.getDatasetMeta(datasetIndex);
+          const groups = new Map();
+
+          dataset.data.forEach((score, index) => {
+            if (score === null || score === undefined || !Number.isFinite(Number(score))) return;
+            const level = normaliseText(categories[index].level);
+            if (!level || !meta.data[index]) return;
+            const point = meta.data[index].getProps(["x", "y"], true);
+            if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+            if (!groups.has(level)) groups.set(level, []);
+            groups.get(level).push(point);
+          });
+
+          ctx.save();
+          ctx.strokeStyle = dataset.borderColor;
+          ctx.lineWidth = 2;
+          ctx.setLineDash(datasetIndex === 0 ? [] : [4, 5]);
+          groups.forEach(points => {
+            if (!points.length) return;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            points.forEach(point => ctx.lineTo(point.x, point.y));
+            ctx.lineTo(centerX, centerY);
+            ctx.stroke();
+          });
+          ctx.restore();
+        });
       }
     };
 
     radarChart = new Chart(canvas.getContext("2d"), {
       type: "radar",
       data: { labels, datasets },
-      plugins: [earlierLevelLine],
+      plugins: [levelScorePaths],
       options: {
         responsive: true,
         maintainAspectRatio: false,
